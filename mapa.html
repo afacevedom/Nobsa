@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><!-- inicia el encabezado del documento -->
+    <meta charset="UTF-8">
+    <meta lang="es">
+    <title>Nobsa - Boyacá - Ubicación</title>
+    <link href="css/styles.css" rel="stylesheet" type="text/css">
+    <link rel="icon" href="imagenes/ruana.png">
+    <script src="js/mapa.js"></script>
+</head><!-- fin del encabezado del documento -->
+    
+    
+<body><!-- inicia el cuerpo del documento -->
+    
+    <header>
+        <input type="checkbox" id="btn-menu">
+        <label for="btn-menu"><img src="imagenes/menu.png" width="30px"></label>
+    
+    <nav class="menu_nav">
+        <!-- Menu de navegacion -->
+        <a class="nav_button" href="nuestra-gente.html" target="_self">Nuestra Gente</a> <!-- Botón que lleva a la pestaña 'Nuestra Gente' -->
+        <a class="nav_button" href="historia.html" target="_self">Historia</a> <!-- Botón que lleva a la pestaña 'Historia' -->
+        <a class="nav_button" href="ubicacion.html" target="_self">Ubicación</a> <!-- Botón que lleva a la pestaña 'Ubicación' -->
+        <a class="nav_button" href="mapa.html" target="_self">Mapa</a><!-- Vinculo que lleva a la pestaña 'Mapa' -->
+        <a class="nav_button" href="que-hacer.html" target="_self">¿Qué hacer en Nobsa?</a> <!-- Botón que lleva a la pestaña '¿Qué hacer en Nobsa?' -->
+        <a class="nav_button" href="creditos.html" target="_self">Créditos</a> <!-- Botón que lleva a la pestaña 'Créditos' -->
+    </nav>
+
+    <div class="page_title">
+        <!-- Titulo de la pagina en el panel principal -->
+        <h1><a href="index.html" target="_self">Nobsa - Boyacá</a></h1> <!-- Vinculo del titulo que lleva a la pagina de inicio -->
+    </div>
+
+    </header>
+    <!--Elemento que contiene al mapa interactivo-->
+    <div class="interactive_map_container">
+        <h2 id="mapaint_nobsa" class="content_subtitle"><a href="#mapaint_nobsa">Mapa Interactivo de Nobsa</a></h2>
+        <div class="nobsa_map">
+            <!--Imagen del mapa interactivo-->
+            <img class="map" src="imagenes/Nobsadiv.png" alt="Nobsa map">
+            <!--Imagen de los botones-->
+            <a href="#Info" target="_self"><img class="map_pin home" onclick="muestraImg('Home')" src="imagenes/ruana.png" alt="Home"></a> <!-- Passing a parameter in order the function to know what values (text, img or video url) to use -->
+            <a href="#Info" target="_self"><img class="map_pin button1" onclick="muestraVideo('Viñedo')" src="imagenes/alfiler.png" alt="Viñedo"></a>
+            <a href="#Info" target="_self"><img class="map_pin button2" onclick="muestraVideo('Parque Principal e Iglesia')" src="imagenes/alfiler.png" alt="Parque Principal e Iglesia"></a>
+            <a href="#Info" target="_self"><img class="map_pin button3" onclick="muestraImg('Capilla de Lourdes')" src="imagenes/alfiler.png" alt="Capilla de Lourdes"></a>
+            <a href="#Info" target="_self"><img class="map_pin button4" onclick="muestraVideo('Cementos Holcim')" src="imagenes/alfiler.png" alt="Cementos Holcim"></a>
+            <a href="#Info" target="_self"><img class="map_pin button5" onclick="muestraVideo('Acerias Paz del Rio')" src="imagenes/alfiler.png" alt="Acerias Paz del Rio"></a>
+            <a href="#Info" target="_self"><img class="map_pin button6" onclick="muestraVideo('Cruz de Aranda')" src="imagenes/alfiler.png" alt="Cruz de Aranda"></a>
+        </div>
+        <hr class="map_separator">
+        <p id="text_info">
+            <b>¡Bienvenidos a Nobsa!</b> 
+            <br> Conoece algunos de los puntos de interés de nuestro municipio. 
+            <br>Dale clic a algún pin y descubrirás más información de los lugares para visitar en Nobsa.
+        </p>
+        <div id="Info" class="nobsa_map_info">
+            <img id="info_img" src="imagenes/enamorate.jpg" alt="Nobsa">
+            <iframe id="info_video" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            
+        </div>
+    </div>
+    
+    <div class="footer">
+        <!-- Pie de pagina -->
+        <h5 class="footer_element">Visita Nobsa Boyacá</h5> <!-- Publicidad -->
+        <h6 class="footer_element">Derechos Reservados</h6> <!-- Universidad -->
+    </div>
+</body><!-- Fin del cuerpo del documento -->
+</html><!-- Fin del documento -->
