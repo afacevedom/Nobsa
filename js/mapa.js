@@ -1,52 +1,80 @@
+// Mapa de Nobsa: Leaflet + OpenStreetMap, filtros, lista y ficha de cada lugar.
+// Los datos salen de #lugares-data (los genera tools/build.py desde tools/lugares.py).
+(() => {
+  const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const data = JSON.parse($('#lugares-data').textContent);
+  const byId = Object.fromEntries(data.lugares.map(p => [p.id, p]));
+  const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches, hasMap = !!window.L;
+  const det = $('#detalle'), markers = {};
+  let map, group, actual = null;
 
-const resources = { // Informacion con las secciones del mapa
-    "Home" : { // Objeto con la URL y el texto de la seccion
-        "info_img" : "imagenes/enamorate.jpg",
-        "text_info": "<b>¡Bienvenidos a Nobsa!</b> <br> Conoce algunos de los puntos de interés de nuestro municipio. <br>Dale clic a algún pin y descubrirás más información de los lugares para visitar en Nobsa."
-            },
-    "Viñedo": { // Objeto con la URL y el texto de la seccion
-        "video_url": "https://www.youtube.com/embed/BCKjbF-pVv4",
-        "text_info": "<b>Viñedo Marqués de Puntalarga</b> <br> <br> En un entorno consentido por la luz, los matices y las tonalidades, como el valle del sol, es de esperar que la vida nos informe, a través de los colores, aromas y sabores de los vinos. Un lugar recomendado para visitar en cualquier época del año, pero en enero se realiza el festival de vid y vino. Recomendado."
-    },
-    "Parque Principal e Iglesia": {// Objeto con la URL y el texto de la seccion
-        "video_url": "https://www.youtube.com/embed/yRODqvF_dcs",
-        "text_info": "<b>Parque Principal e Iglesia</b> <br> Nobsa es un municipio turístico boyacense que se caracteriza por su tradición artesanal, cultural y los viñedos. Su ubicación hace muy fácil visitarlo, la cercanía con Bogotá y Tunja, las buenas carreteras y la seguridad vial, nos permiten realizar un viaje muy tranquilo y placentero, admirando el paisaje , realizando una que otra parada para comprar frutas y mecato de la región. En el parque principal encontrarás todo tipo de postres y golosinas hechas con frutas de la región, además podrás encontrar la iglesia principal que es digna de ser visitada."
-    },
-    "Capilla de Lourdes": {// Objeto con la URL y el texto de la seccion
-        "info_img": "imagenes/capilla-de-lourdes-nobsa-boyacá.jpg",
-        "text_info": "<b>Capilla de Lourdes</b> <br> Situada en el monte denominado 'El Calvario', a unas cuantas de el parque principal se encuentra la Capilla de Lourdes, uno de los principales bienes culturales y religiosos del municipio de Nobsa Boyacá ."
-    },
-    "Cementos Holcim": {// Objeto con la URL y el texto de la seccion
-        "video_url": "https://www.youtube.com/embed/zHn2bzpn0ZA",
-        "text_info": "<b>Cementos Holcim</b> <br> Holcim (Colombia) S.A. es una empresa perteneciente al grupo suizo Holcim, líder en la industria mundial del cemento y uno de los principales proveedores de cemento, concreto y agregados y de todos los servicios relacionados con la construcción. Tiene intereses mayoritarios y minoritarios en alrededor de 70 países de todos los continentes y una nómina de unos 80 mil empleados a nivel mundial. Una de sus plantas está en la entrada al centro de Nobsa.  "
-    },
-    "Acerias Paz del Rio": {// Objeto con la URL y el texto de la seccion
-        "video_url": "https://www.youtube.com/embed/lRRSvgviNsM",
-        "text_info": "<b>Acerias Paz del Rio</b> <br> Acerías Paz del Río es la segunda empresa siderúrgica más grande de Colombia, propiedad del grupo empresarial Trinity Capital. Creada en el año 1948 con el nombre de Empresa Siderúrgica Nacional de Paz de Río. La producción en pleno de la compañía se inició en 1954, cuando pasó a llamarse Acerías Paz del Río, S.A. En el año 2007 el grupo empresarial brasileño Votorantim adquirió el 51.1% de las acciones de la compañía. Actualmente, es responsable del 30% de la fabricación de acero en Colombia."
-    },
-    "Cruz de Aranda": {// Objeto con la URL y el texto de la seccion
-        "video_url": "https://www.youtube.com/embed/J_y_0_4haHc",
-        "text_info": "<b>Cruz de Aranda</b> <br> Dicen los antiguos pobladores, que cuando aún no había desecación, todo el pintoresco Valle del rincón Nobsano era una inmensa laguna, y sin embargo las fértiles estribaciones de las circundantes lomas la presentaban como un pesebre de agricultores y de hombres con fortuna. Narran, aun con honor, como Satán guindaba su hamaca en las noches entre los cerros de Dungua y de Chacón, y meciendo su jartera se echaba a roncar y en esta apacible población no había tranquilidad. Tantos desmanes cometió esa criatura infernal y entre ellas la que hizo arder la iglesia parroquial, los creyentes entonces en comunidad, decidieron para siempre desterrar de este hermoso valle, esa horrible criatura llamada Satanás. El padre José Agustín Aranda, en el año de 1885, el tres de mayo reflexiono con algunos de sus feligreses y optaron por la más práctica y real, en el cerro el Tungón, se erigió y entronizo para siempre la sagrada y venerada cruz, como guardia celoso no deja acercar a esa criatura infernal. Y en esta comarca reinaría por siempre la paz. Por ser el sitio más alto y distante del pueblo se llevó con veneración la sagrada cruz en penitente peregrinación el sitio, que andando el tiempo los hombres de Nobsa, Cruz de Aranda la llamaron. Esta primera cruz era hecha de madera y en forma cuadrada y totalmente forrada en lata, espectacular revestimiento desde la distancia en noche o en día era bien definido su destello. Pero... no duró lo suficiente la intemperie y la inclemencia fueron implacables y la destruyó totalmente... Para entonces el sitio ya era conocido como Cruz de Aranda. El Padre Francisco Becerra en mayo 13 de 1931, volvió con sus católicos creyentes, a construir una cruz en cemento y en sitio denominado; de la Porquera; y desde allí llevada en memorable procesión de vía crucis, el domingo 14 de junio de 1931 al lugar que decían los creyentes que allí estuvo la cruz del padre Aranda. Erigida y entronizada. Duró en pie y erguida hasta el año de 1957, en los que algunos afirmaban que un rayo la quebró de su base y le partió su parte superior, doblándola sobre la inmensa roca. Ligada a su paso Cruz dejó un recuerdo de leyenda porque a partir de entonces, sin existir la Cruz, los paisanos de Nobsa continuaron llamando así ese paraje agreste de nuestro campo vernáculo, por todos fue conocido así ese lugar."
-    }, 
-    
-}
+  const ajustar = () => { const b = group.getBounds(); if (b.isValid()) map.fitBounds(b, {padding: [56, 56], maxZoom: 16}); };
+  const marcar = () => Object.entries(markers).forEach(([k, m]) => { const el = m.getElement(); if (el) el.classList.toggle('sel', k === actual); });
 
-function ResetVideo(){ // Deja los valores en ninguno
-    document.getElementById("info_video").style.display = "none";
-    document.getElementById("info_video").removeAttribute("src");
-}
-function muestraImg(section){ // Funcion para texto e imagen
-    ResetVideo(); // Reiniciar la informacion 
-    document.getElementById("info_img").style.display = "block"; // Mostrar imagen 
-    document.getElementById("info_img").src = resources[section]["info_img"]; // Scroll hasta la seccion 
-    document.getElementById("text_info").innerHTML = resources[section]["text_info"]; // Texto
-    if(innerWidth<900)document.getElementById("Info").scrollIntoView({behavior:"smooth",block:"nearest"}); // Scroll hasta la seccion 
-}
+  function pintar(p) {
+    const url = p.lat == null ? '' : `https://www.openstreetmap.org/?mlat=${p.lat}&mlon=${p.lon}#map=17/${p.lat}/${p.lon}`;
+    det.innerHTML =
+      (p.img ? `<img src="${esc(p.img)}" alt="${esc(p.nombre)}">` : '') +
+      `<div><h3>${esc(p.nombre)}</h3><p class="cat">${p.cat.map(c => esc(data.categorias[c])).join(' · ')}</p>` +
+      `<div class="txt">${p.texto.map(t => `<p>${esc(t)}</p>`).join('')}</div>` +
+      `<div class="geo-actions">${p.texto.length > 1 ? '<button type="button" class="mas">Leer más</button>' : ''}` +
+      `${p.video ? `<button type="button" class="ver" data-v="${esc(p.video)}">Ver video</button>` : ''}` +
+      `${url ? `<a href="${url}" target="_blank" rel="noopener">Abrir en OpenStreetMap</a>` : ''}</div>` +
+      `<div class="vid" hidden></div><p class="src">${url ? 'Ubicación: ' : ''}${esc(p.fuente)}</p></div>`;
+  }
 
-function muestraVideo(section) { // Funcion para texto y video
-    document.getElementById("info_img").style.display = "none"; // Set display image to none
-    document.getElementById("info_video").style.display = "block"; // Muestra el video
-    document.getElementById("info_video").src = resources[section]["video_url"]; // URL
-    document.getElementById("text_info").innerHTML = resources[section]["text_info"]; // Texto
-    if(innerWidth<900)document.getElementById("Info").scrollIntoView({behavior:"smooth",block:"nearest"}); // Scroll hasta la seccion 
-}
+  function elegir(id, mover = true) {
+    const p = byId[id]; if (!p) return; actual = id;
+    $$('#lista button').forEach(b => b.setAttribute('aria-current', String(b.dataset.id === id)));
+    marcar(); pintar(p);
+    if (hasMap && mover && p.lat != null) {
+      const z = Math.max(map.getZoom(), 15);
+      reduce ? map.setView([p.lat, p.lon], z) : map.flyTo([p.lat, p.lon], z, {duration: .8});
+    }
+  }
+
+  if (hasMap) {
+    $('.geo-fallback').remove();
+    map = L.map('mapa-osm', {minZoom: 10, maxZoom: 18, scrollWheelZoom: false, dragging: !L.Browser.mobile});
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">colaboradores de OpenStreetMap</a>'}).addTo(map);
+    map.on('focus', () => map.scrollWheelZoom.enable()).on('blur', () => map.scrollWheelZoom.disable());
+    group = L.featureGroup().addTo(map);
+    data.lugares.filter(p => p.lat != null).forEach(p => {
+      markers[p.id] = L.marker([p.lat, p.lon], {title: p.nombre, alt: p.nombre,
+        icon: L.divIcon({className: 'pin c-' + p.cat[0], html: `<span><b>${p.n}</b></span>`, iconSize: [44, 44], iconAnchor: [22, 44]})})
+        .on('click', () => elegir(p.id, false)).addTo(group);
+    });
+    ajustar();
+    addEventListener('load', () => map.invalidateSize());
+  } else {
+    $('.geo-fallback').textContent = 'No se pudo cargar el mapa. Puedes explorar los lugares en la lista.';
+  }
+
+  $('#lista').addEventListener('click', e => {
+    const b = e.target.closest('button[data-id]'); if (!b) return;
+    elegir(b.dataset.id);
+    if (matchMedia('(max-width: 900px)').matches) $('.geo-map').scrollIntoView({behavior: reduce ? 'auto' : 'smooth', block: 'start'});
+  });
+
+  $$('.geo-filters button').forEach(b => b.addEventListener('click', () => {
+    $$('.geo-filters button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    const f = b.dataset.f, ok = p => f === 'todos' || p.cat.includes(f);
+    data.lugares.forEach(p => {
+      $(`#lista [data-id="${p.id}"]`).closest('li').hidden = !ok(p);
+      if (markers[p.id]) group[ok(p) ? 'addLayer' : 'removeLayer'](markers[p.id]);
+    });
+    if (hasMap) { ajustar(); marcar(); }
+  }));
+
+  det.addEventListener('click', e => {
+    const t = e.target.closest('button'); if (!t) return;
+    if (t.classList.contains('mas')) t.textContent = $('.txt', det).classList.toggle('open') ? 'Leer menos' : 'Leer más';
+    if (t.classList.contains('ver')) {
+      const v = $('.vid', det); v.hidden = false;
+      v.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(t.dataset.v)}?autoplay=1" title="Video: ${esc(byId[actual].nombre)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
+      t.remove();
+    }
+  });
+  elegir(data.lugares[0].id, false);
+})();
