@@ -2,7 +2,7 @@
 const resources = { // Informacion con las secciones del mapa
     "Home" : { // Objeto con la URL y el texto de la seccion
         "info_img" : "imagenes/enamorate.jpg",
-        "text_info": "<b>¡Bienvenidos a Nobsa!</b> <br> Conoece algunos de los puntos de interés de nuestro municipio. <br>Dale clic a algún pin y descubrirás más información de los lugares para visitar en Nobsa."
+        "text_info": "<b>¡Bienvenidos a Nobsa!</b> <br> Conoce algunos de los puntos de interés de nuestro municipio. <br>Dale clic a algún pin y descubrirás más información de los lugares para visitar en Nobsa."
             },
     "Viñedo": { // Objeto con la URL y el texto de la seccion
         "video_url": "https://www.youtube.com/embed/BCKjbF-pVv4",
@@ -33,14 +33,14 @@ const resources = { // Informacion con las secciones del mapa
 
 function ResetVideo(){ // Deja los valores en ninguno
     document.getElementById("info_video").style.display = "none";
-    document.getElementById("info_video").src = "none";
+    document.getElementById("info_video").removeAttribute("src");
 }
 function muestraImg(section){ // Funcion para texto e imagen
     ResetVideo(); // Reiniciar la informacion 
     document.getElementById("info_img").style.display = "block"; // Mostrar imagen 
     document.getElementById("info_img").src = resources[section]["info_img"]; // Scroll hasta la seccion 
     document.getElementById("text_info").innerHTML = resources[section]["text_info"]; // Texto
-    document.getElementById("Info").scrollIntoView(); // Scroll hasta la seccion 
+    if(innerWidth<900)document.getElementById("Info").scrollIntoView({behavior:"smooth",block:"nearest"}); // Scroll hasta la seccion 
 }
 
 function muestraVideo(section) { // Funcion para texto y video
@@ -48,5 +48,5 @@ function muestraVideo(section) { // Funcion para texto y video
     document.getElementById("info_video").style.display = "block"; // Muestra el video
     document.getElementById("info_video").src = resources[section]["video_url"]; // URL
     document.getElementById("text_info").innerHTML = resources[section]["text_info"]; // Texto
-    document.getElementById("Info").scrollIntoView(); // Scroll hasta la seccion 
+    if(innerWidth<900)document.getElementById("Info").scrollIntoView({behavior:"smooth",block:"nearest"}); // Scroll hasta la seccion 
 }
