@@ -2,15 +2,18 @@
 // Los datos salen de #lugares-data (los genera tools/build.py desde tools/lugares.py).
 (() => {
   const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
-  const data = JSON.parse($('#lugares-data').textContent);
-  const byId = Object.fromEntries(data.lugares.map(p => [p.id, p]));
+  const data = JSON.parse($('#lugares-data').textContent), byId = {};
+  data.lugares.forEach(p => { byId[p.id] = p; });
   const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches, hasMap = !!window.L;
-  const det = $('#detalle'), markers = {};
-  let map, group, actual = null;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const el = $('#mapa-osm'), det = $('#detalle'), markers = {};
+  const osm = '<a href="https://www.openstreetmap.org/?mlat=5.7697&amp;mlon=-72.94#map=14/5.7697/-72.94" target="_blank" rel="noopener">Abrir Nobsa en OpenStreetMap</a>';
+  const estado = (s) => { document.documentElement.dataset.mapa = s; };   // lo lee el aviso de respaldo del HTML
+  const fallo = (txt) => { el.innerHTML = `<p class="geo-fallback">${txt} ${osm}.</p>`; };
+  let map = null, group = null, actual = null;
 
   const ajustar = () => { const b = group.getBounds(); if (b.isValid()) map.fitBounds(b, {padding: [56, 56], maxZoom: 16}); };
-  const marcar = () => Object.entries(markers).forEach(([k, m]) => { const el = m.getElement(); if (el) el.classList.toggle('sel', k === actual); });
+  const marcar = () => Object.keys(markers).forEach(k => { const e = markers[k].getElement(); if (e) e.classList.toggle('sel', k === actual); });
 
   function pintar(p) {
     const url = p.lat == null ? '' : `https://www.openstreetmap.org/?mlat=${p.lat}&mlon=${p.lon}#map=17/${p.lat}/${p.lon}`;
@@ -28,15 +31,15 @@
     const p = byId[id]; if (!p) return; actual = id;
     $$('#lista button').forEach(b => b.setAttribute('aria-current', String(b.dataset.id === id)));
     marcar(); pintar(p);
-    if (hasMap && mover && p.lat != null) {
+    if (map && mover && p.lat != null) {
       const z = Math.max(map.getZoom(), 15);
       reduce ? map.setView([p.lat, p.lon], z) : map.flyTo([p.lat, p.lon], z, {duration: .8});
     }
   }
 
-  if (hasMap) {
-    $('.geo-fallback').remove();
-    map = L.map('mapa-osm', {minZoom: 10, maxZoom: 18, scrollWheelZoom: false, dragging: !L.Browser.mobile});
+  function iniciarMapa() {
+    el.innerHTML = '';
+    map = L.map(el, {minZoom: 10, maxZoom: 18, scrollWheelZoom: false, dragging: !L.Browser.mobile});
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">colaboradores de OpenStreetMap</a>'}).addTo(map);
     map.on('focus', () => map.scrollWheelZoom.enable()).on('blur', () => map.scrollWheelZoom.disable());
     group = L.featureGroup().addTo(map);
@@ -46,15 +49,17 @@
         .on('click', () => elegir(p.id, false)).addTo(group);
     });
     ajustar();
-    addEventListener('load', () => map.invalidateSize());
-  } else {
-    $('.geo-fallback').textContent = 'No se pudo cargar el mapa. Puedes explorar los lugares en la lista.';
+    addEventListener('load', () => map && map.invalidateSize());
   }
 
+  if (!window.L) { fallo('No se pudo cargar la librería del mapa (revisa tu conexión o el bloqueador de contenido).'); estado('sin-leaflet'); }
+  else { try { iniciarMapa(); estado('ok'); } catch (err) { console.error(err); map = null; fallo('No se pudo iniciar el mapa.'); estado('error'); } }
+
+  // La lista, los filtros y las fichas funcionan aunque el mapa falle.
   $('#lista').addEventListener('click', e => {
     const b = e.target.closest('button[data-id]'); if (!b) return;
     elegir(b.dataset.id);
-    if (matchMedia('(max-width: 900px)').matches) $('.geo-map').scrollIntoView({behavior: reduce ? 'auto' : 'smooth', block: 'start'});
+    if (map && matchMedia('(max-width: 900px)').matches) $('.geo-map').scrollIntoView({behavior: reduce ? 'auto' : 'smooth', block: 'start'});
   });
 
   $$('.geo-filters button').forEach(b => b.addEventListener('click', () => {
@@ -62,9 +67,9 @@
     const f = b.dataset.f, ok = p => f === 'todos' || p.cat.includes(f);
     data.lugares.forEach(p => {
       $(`#lista [data-id="${p.id}"]`).closest('li').hidden = !ok(p);
-      if (markers[p.id]) group[ok(p) ? 'addLayer' : 'removeLayer'](markers[p.id]);
+      if (map && markers[p.id]) group[ok(p) ? 'addLayer' : 'removeLayer'](markers[p.id]);
     });
-    if (hasMap) { ajustar(); marcar(); }
+    if (map) { ajustar(); marcar(); }
   }));
 
   det.addEventListener('click', e => {
