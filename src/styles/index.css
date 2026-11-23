@@ -1,0 +1,91 @@
+@import 'leaflet/dist/leaflet.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    background-color: #F5F1E8;
+    color: #161917;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    overflow-x: clip;
+  }
+
+  h1, h2, h3, .font-editorial {
+    font-family: 'Fraunces', Georgia, serif;
+    font-optical-sizing: auto;
+  }
+
+  :focus-visible {
+    outline: 2px solid #8F2429;
+    outline-offset: 3px;
+  }
+}
+
+.bg-loom-grid {
+  background-image:
+    linear-gradient(to right, rgba(245, 241, 232, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(245, 241, 232, 0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.bg-paper-grid {
+  background-image:
+    linear-gradient(to right, rgba(22, 25, 23, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(22, 25, 23, 0.045) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.leaflet-container {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  background-color: #EBE4D5;
+  z-index: 10;
+}
+
+.nobsa-marker-icon {
+  background: transparent;
+  border: none;
+}
+
+.nobsa-pin {
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  font-size: 13px;
+  color: #FAF8F3;
+  border: 2.5px solid #FAF8F3;
+  box-shadow: 0 6px 16px rgba(22, 25, 23, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.nobsa-pin.is-active {
+  transform: scale(1.22);
+  box-shadow: 0 0 0 4px rgba(143, 36, 41, 0.3), 0 10px 24px rgba(22, 25, 23, 0.45);
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  background: #161917;
+  color: #F5F1E8;
+  box-shadow: 0 16px 32px rgba(22, 25, 23, 0.35);
+}
+
+.leaflet-popup-tip {
+  background: #161917;
+}

@@ -1,0 +1,155 @@
+import type { Place, PlaceCategory } from '../types/nobsa';
+
+export const PLACE_CATEGORIES: Record<PlaceCategory, { label: string; color: string; bg: string }> = {
+  pueblo: { label: 'El pueblo', color: '#8F2429', bg: 'bg-grana' },
+  fe: { label: 'Fe y patrimonio', color: '#C98E2B', bg: 'bg-trigo' },
+  paisaje: { label: 'Miradores y senderos', color: '#2D4839', bg: 'bg-musgo' },
+  tradicion: { label: 'Tradición y sabores', color: '#6E191E', bg: 'bg-grana-dark' },
+  industria: { label: 'Industria', color: '#263654', bg: 'bg-indigo-telar' },
+};
+
+export const PLACES: Place[] = [
+  {
+    id: 'pueblo',
+    number: 1,
+    name: 'Parque Principal e Iglesia Municipal',
+    categories: ['pueblo', 'fe'],
+    lat: 5.77055,
+    lon: -72.93977,
+    image: 'IglesiaNavidad.jpg',
+    imageAlt: 'Iglesia municipal de Nobsa con torre en piedra tallada frente al parque principal',
+    videoId: 'yRODqvF_dcs',
+    highlightTag: 'Corazón urbano · 1898',
+    summary:
+      'Templo de tres naves con torre de piedra tallada de 1898 y un parque trazado en cuatro círculos bajo la sombra de palmeras.',
+    paragraphs: [
+      'El corazón urbano de Nobsa combina la vida pausada de su parque principal con el valor arquitectónico de su templo parroquial. En torno a la plaza abundan los puestos de postres, dulces y golosinas preparados con frutas de la región, acompañados por la brisa suave del Alto Chicamocha.',
+      'La iglesia municipal, de tres naves y construida en 1898, sobresale por su torre en piedra tallada y su lenguaje dórico-barroco. En su interior se conservan el cuadro de San Jerónimo —lienzo del pintor español Francisco Zurbarán— y la imagen de San Roque, patrono del municipio cuya romería se celebra cada 8 de septiembre. El altar mayor fue tallado en madera por el ebanista local Anselmo Zárate, autor de otros templos y altares de las provincias de Tundama y Sugamuxi.',
+      'El parque central se organiza alrededor de cuatro círculos que estructuran el espacio público, rodeados de palmeras bajo cuya sombra se encuentran vecinos y visitantes.',
+    ],
+    sourceNote: 'OpenStreetMap (way 617701190, Plaza Principal). Verificado con Apple Maps y registro GPS en Wikiloc.',
+  },
+  {
+    id: 'capilla',
+    number: 2,
+    name: 'Mirador y Capilla de Lourdes',
+    categories: ['fe', 'paisaje'],
+    lat: 5.7755,
+    lon: -72.94108,
+    image: 'capilla-de-lourdes-nobsa-boyacá.jpg',
+    imageAlt: 'Capilla de Nuestra Señora de Lourdes en el monte El Calvario, Nobsa',
+    videoId: null,
+    highlightTag: 'Monte El Calvario',
+    summary:
+      'La panorámica más reconocida sobre el casco urbano de Nobsa, punto de paso obligado hacia la Cruz de Aranda.',
+    paragraphs: [
+      'Situada en el monte denominado El Calvario, a poca distancia del parque principal, la Capilla de Nuestra Señora de Lourdes constituye uno de los bienes culturales y religiosos más queridos del municipio.',
+      'El ascenso ofrece una vista abierta sobre los tejados del pueblo y el valle del Alto Chicamocha, convirtiéndose también en una ruta habitual para quienes practican caminata y entrenamiento deportivo en dirección a la Cruz de Aranda.',
+    ],
+    sourceNote: 'OpenStreetMap (node 5838963425, Capilla Nuestra Señora de Lourdes).',
+  },
+  {
+    id: 'cruz',
+    number: 3,
+    name: 'Cruz de Aranda',
+    categories: ['fe', 'paisaje'],
+    lat: 5.80374,
+    lon: -72.94256,
+    image: 'Cruz_de_Aranda.jpg',
+    imageAlt: 'Monumento de la Cruz de Aranda en el cerro rural de Nobsa',
+    videoId: 'J_y_0_4haHc',
+    highlightTag: 'Cerro El Tungón · 1886',
+    summary:
+      'Monumento rural erigido por el párroco José Agustín Aranda en 1886, destino de peregrinación, senderismo y ciclomontañismo cada 1.º de mayo.',
+    paragraphs: [
+      'Ubicada en la zona rural de Nobsa, en el cerro El Tungón, la Cruz de Aranda fue levantada a finales del siglo XIX por el párroco José Agustín Aranda. Llegar desde el casco urbano toma cerca de tres horas a pie por senderos acondicionados, una travesía apreciada tanto por caminantes como por practicantes de bicicleta de montaña (MTB) llegados de todo el país.',
+      'Cada 1.º de mayo la comunidad realiza la tradicional peregrinación junto con una carrera atlética que reúne a jóvenes y adultos en homenaje al Día del Trabajador y a un hito que ha marcado la memoria colectiva del municipio.',
+    ],
+    legend: {
+      title: 'La leyenda del Diablo entre Dungua y Chacón',
+      subtitle: 'Relato de tradición oral nobsana · 1885 – 1957',
+      paragraphs: [
+        'Cuentan los antiguos pobladores que, cuando el valle aún no había sido desecado, el rincón nobsano era una gran laguna rodeada de lomas fértiles. Según la tradición, el Diablo colgaba su hamaca cada noche entre los cerros de Dungua y de Chacón, perturbando el descanso del pueblo y provocando desmanes, entre ellos el incendio de la iglesia parroquial.',
+        'El 3 de mayo de 1885, el padre José Agustín Aranda reflexionó con sus feligreses y decidió entronizar una cruz en lo más alto del cerro El Tungón para devolver la paz a la comarca. Aquella primera cruz —levantada en 1886— fue hecha en madera cuadrada y forrada completamente en lata, cuyo destello se distinguía a la distancia de día y de noche, hasta que la intemperie terminó por destruirla.',
+        'El 13 de mayo de 1931, el padre Francisco Becerra promovió la construcción de una nueva cruz en cemento en el sitio de La Porquera, llevada en procesión de vía crucis el domingo 14 de junio de 1931 hasta el mismo cerro. Permaneció en pie hasta 1957, cuando un rayo la partió desde la base. Aun sin la cruz original en pie, el paraje conservó para siempre el nombre de Cruz de Aranda.',
+      ],
+    },
+    sourceNote: 'Coordenada GPS contrastada entre dos rutas independientes de Wikiloc (< 100 m de diferencia).',
+  },
+  {
+    id: 'vino',
+    number: 4,
+    name: 'Viñedo Marqués de Puntalarga',
+    categories: ['tradicion'],
+    lat: 5.77923,
+    lon: -72.97666,
+    image: 'vinos.jpg',
+    imageAlt: 'Viñedo y botellas de vino en Marqués de Puntalarga, Nobsa',
+    videoId: 'BCKjbF-pVv4',
+    highlightTag: 'Valle del Sol · Enero',
+    summary:
+      'Viñedo boyacense abierto a catas y compra directa de vinos locales, sede anual del Festival de la Vid y el Vino en enero.',
+    paragraphs: [
+      'En el entorno luminoso conocido como el Valle del Sol, el Viñedo Marqués de Puntalarga ofrece recorridos y catas donde se degustan vinos producidos en el territorio y se adquieren botellas directamente en bodega.',
+      'Aunque puede visitarse durante todo el año, en enero cobra especial protagonismo como escenario del Festival de la Vid y el Vino, encuentro que reúne cultura enológica y tradición boyacense.',
+    ],
+    sourceNote: 'OpenStreetMap (node 682562356, viñedo). Contrastado con WorldPlaces (~150 m de diferencia).',
+  },
+  {
+    id: 'holcim',
+    number: 5,
+    name: 'Planta Cementos Holcim',
+    categories: ['industria'],
+    lat: 5.763334,
+    lon: -72.933394,
+    image: null,
+    imageAlt: 'Planta cementera de Holcim en la entrada a Nobsa',
+    videoId: 'zHn2bzpn0ZA',
+    highlightTag: 'Corredor industrial',
+    summary:
+      'Complejo cementero situado a la entrada del casco urbano, parte fundamental del eje industrial que transformó el municipio en el siglo XX.',
+    paragraphs: [
+      'Holcim (Colombia) S.A., filial del grupo suizo Holcim, opera una de sus plantas cementeras en la entrada al centro de Nobsa, suministrando cemento, concreto y agregados para la construcción regional y nacional.',
+      'Junto con la siderurgia, la industria cementera marcó la urbanización moderna de Nobsa, impulsó la llegada de trabajadores de otras regiones y consolidó su posición dentro del corredor industrial de Boyacá.',
+    ],
+    sourceNote: 'Global Energy Monitor (planta de cemento de Nobsa). Coincide con Industry About y Waze.',
+  },
+  {
+    id: 'acerias',
+    number: 6,
+    name: 'Acerías Paz del Río',
+    categories: ['industria'],
+    lat: 5.77094,
+    lon: -72.88051,
+    image: null,
+    imageAlt: 'Complejo siderúrgico Acerías Paz del Río en Belencito, Nobsa',
+    videoId: 'lRRSvgviNsM',
+    highlightTag: 'Belencito · Desde 1948',
+    summary:
+      'Segunda siderúrgica más grande de Colombia, creada en 1948 y responsable de cerca del 30 % de la fabricación de acero del país según las fuentes del proyecto.',
+    paragraphs: [
+      'Fundada en 1948 como Empresa Siderúrgica Nacional de Paz de Río, inició producción en pleno en 1954 ya con el nombre de Acerías Paz del Río S.A. En 2007 el grupo brasileño Votorantim adquirió el 51,1 % de sus acciones y posteriormente pasó a formar parte del grupo empresarial Trinity Capital.',
+      'Instalada en el sector de Belencito, su presencia junto a las plantas cementeras redefinió la economía local, el tránsito de carga sobre la Carretera Central del Norte y el surgimiento de asentamientos como Nazareth y Las Caleras.',
+    ],
+    sourceNote: 'OpenStreetMap (way 253048585, zona industrial). Registro del Banco de la República dentro del mismo complejo.',
+  },
+  {
+    id: 'ruanas',
+    number: 7,
+    name: 'Calle de Ruanas y Artesanías',
+    categories: ['tradicion', 'pueblo'],
+    lat: null,
+    lon: null,
+    image: 'nobsa-vía-principal-boyacá.jpg',
+    imageAlt: 'Vía principal y comercio de ruanas y artesanías en Nobsa, Boyacá',
+    videoId: null,
+    highlightTag: 'Oficio vivo · Sin pin GPS verificado',
+    summary:
+      'Epicentro artesanal del municipio: talleres familiares de ruanas en lana virgen, forja, talla en piedra y madera, campanas y dulces de breva y uva.',
+    paragraphs: [
+      'Recorrer las calles comerciales del casco urbano de Nobsa permite entrar en contacto directo con más de 25 artesanos y sus familias dedicados históricamente al tejido de ruanas y prendas en fibras naturales.',
+      'Además del telar, la comunidad destaca por la forja artesanal, la elaboración de muebles rústicos, la talla en madera y piedra, la fundición de campanas artesanales, la cerámica y los productos derivados de la breva y la uva.',
+    ],
+    sourceNote: 'Ubicación urbana en proceso de georreferenciación exacta: aparece en el directorio editorial pero no como pin puntual en el mapa.',
+  },
+];
