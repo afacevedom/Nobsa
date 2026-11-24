@@ -7,18 +7,23 @@ import { SeoHead } from '../components/seo/SeoHead';
 const LIVE_API_CREDITS = [
   {
     name: 'Open-Meteo Weather API',
-    role: 'Meteorología y pronóstico en tiempo real para Nobsa (5.7706, -72.9398)',
+    role: 'Meteorología actual, curva horaria 12 h y pronóstico 3 días para Nobsa (5.7706, -72.9398)',
     url: 'https://open-meteo.com/',
   },
   {
     name: 'Datos Abiertos Colombia (TRM Superfinanciera) · DolarApi · Open ER-API',
-    role: 'Tasa representativa del dólar en pesos colombianos (USD/COP) con respaldo automático',
+    role: 'TRM oficial de Colombia (USD/COP) con serie histórica de 7 días y respaldos automáticos',
     url: 'https://www.datos.gov.co/Econom-a-y-Finanzas/Tasa-de-Cambio-Representativa-del-Mercado-TRM/32sa-8pi3',
   },
   {
-    name: 'GDELT Project DOC 2.0 API',
-    role: 'Monitoreo abierto de titulares periodísticos recientes sobre Nobsa y Boyacá',
-    url: 'https://www.gdeltproject.org/',
+    name: 'Open-Meteo Air Quality & UV API',
+    role: 'Índice de calidad del aire (US AQI), material particulado PM2.5/PM10 e Índice UV en tiempo real para Nobsa',
+    url: 'https://open-meteo.com/en/docs/air-quality-api',
+  },
+  {
+    name: 'Nager.Date API · API-Colombia',
+    role: 'Calendario en vivo de próximos festivos y puentes en Colombia para planear visitas a Nobsa',
+    url: 'https://date.nager.at/',
   },
 ];
 
@@ -30,13 +35,13 @@ export function CreditsPage() {
         name: 'Créditos editoriales y fuentes documentales — Nobsa, Boyacá',
         description:
           'Fuentes históricas, demográficas, cartográficas y APIs abiertas utilizadas en esta edición cultural independiente sobre Nobsa, Boyacá.',
-        url: 'https://afacevedom.github.io/Nobsa/#/creditos',
+        url: 'https://afacevedom.github.io/Nobsa/creditos/',
       },
       {
         '@type': 'BreadcrumbList',
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'Inicio', item: 'https://afacevedom.github.io/Nobsa/' },
-          { '@type': 'ListItem', position: 2, name: 'Créditos', item: 'https://afacevedom.github.io/Nobsa/#/creditos' },
+          { '@type': 'ListItem', position: 2, name: 'Créditos', item: 'https://afacevedom.github.io/Nobsa/creditos/' },
         ],
       },
     ],
@@ -47,7 +52,7 @@ export function CreditsPage() {
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-20 lg:px-8">
       <SeoHead
         title="Créditos, Fuentes y APIs Abiertas | Nobsa, Boyacá"
-        description="Bibliografía, documentos oficiales DANE/ASIS 2020, créditos fotográficos, cartografía OpenStreetMap y APIs abiertas (Open-Meteo, GDELT y TRM Colombia)."
+        description="Bibliografía, documentos oficiales DANE/ASIS 2020, créditos fotográficos, cartografía OpenStreetMap y APIs abiertas (Open-Meteo Clima/Aire, TRM Colombia y Nager.Date Festivos)."
         path="/creditos"
         jsonLd={creditsJsonLd}
       />
@@ -60,7 +65,6 @@ export function CreditsPage() {
         lead="Toda la información histórica, demográfica, cartográfica y cultural de esta edición proviene de las fuentes documentadas del proyecto original y de servicios abiertos contrastados."
       />
 
-      {/* Aviso editorial explícito */}
       <div className="mt-8 rounded-3xl border border-grana/25 bg-grana/5 p-5 sm:mt-10 sm:p-8">
         <div className="flex items-start gap-3">
           <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-grana" />
@@ -75,7 +79,6 @@ export function CreditsPage() {
         </div>
       </div>
 
-      {/* Fuentes en tiempo real */}
       <section className="mt-10 sm:mt-12">
         <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-musgo">
           <Radio className="h-4 w-4" />
@@ -91,7 +94,7 @@ export function CreditsPage() {
               className="flex flex-col justify-between gap-2 p-5 sm:flex-row sm:items-center"
             >
               <div className="min-w-0">
-                <p className="font-medium text-tinta break-words">{api.name}</p>
+                <p className="break-words font-medium text-tinta">{api.name}</p>
                 <p className="mt-1 text-xs text-tinta-muted">{api.role}</p>
               </div>
               <a
@@ -107,7 +110,6 @@ export function CreditsPage() {
         </ul>
       </section>
 
-      {/* Fuentes documentales */}
       <section className="mt-12">
         <h2 className="font-display text-2xl font-semibold text-tinta">
           Bibliografía, documentos y créditos fotográficos
@@ -122,7 +124,7 @@ export function CreditsPage() {
                 <span className="font-mono text-[11px] uppercase tracking-wider text-grana">
                   {String(ref.id).padStart(2, '0')} · {ref.category}
                 </span>
-                <p className="mt-1 font-medium text-tinta break-words">{ref.title}</p>
+                <p className="mt-1 break-words font-medium text-tinta">{ref.title}</p>
               </div>
               <a
                 href={ref.url}
@@ -137,7 +139,6 @@ export function CreditsPage() {
         </ol>
       </section>
 
-      {/* Cartografía, licencia y contacto */}
       <section className="mt-12 grid gap-6 md:grid-cols-2">
         <div className="rounded-3xl border border-tinta/10 bg-lana-soft p-6">
           <h3 className="font-display text-xl font-semibold text-tinta">

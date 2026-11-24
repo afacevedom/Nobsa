@@ -4,53 +4,43 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Nobsa, Boyacá — Crónica de Lana, Piedra y Vid | Guía Cultural y Turística</title>
-    <meta
-      name="description"
-      content="Descubre Nobsa, Boyacá (Colombia): tradición artesanal de la ruana, Viñedo Marqués de Puntalarga, Cruz de Aranda, historia desde 1593, mapa interactivo, clima en vivo, dólar hoy y festividades en el Alto Chicamocha."
-    />
-    <meta
-      name="keywords"
-      content="Nobsa, Nobsa Boyacá, turismo en Nobsa, ruana de Nobsa, Día Mundial de la Ruana, Viñedo Marqués de Puntalarga, Cruz de Aranda, Capilla de Lourdes Nobsa, Festival Vallenato Nobsa, Alto Chicamocha, Provincia del Sugamuxi, qué hacer en Nobsa, cómo llegar a Nobsa"
-    />
+    <meta name="description" content="Descubre Nobsa, Boyacá (Colombia): tradición artesanal de la ruana, Viñedo Marqués de Puntalarga, Cruz de Aranda, historia desde 1593, mapa interactivo con GPX, clima en vivo y dólar hoy." />
+    <meta name="keywords" content="Nobsa, Nobsa Boyacá, turismo en Nobsa, ruana de Nobsa, Día Mundial de la Ruana, Viñedo Marqués de Puntalarga, Cruz de Aranda, Capilla de Lourdes Nobsa, Festival Vallenato Nobsa, Alto Chicamocha, Provincia del Sugamuxi" />
     <meta name="author" content="Edición Cultural Independiente Nobsa, Boyacá" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="theme-color" content="#161917" />
 
-    <!-- Metadatos geográficos (SEO local) -->
+    <!-- SEO geográfico local -->
     <meta name="geo.region" content="CO-BOY" />
     <meta name="geo.placename" content="Nobsa, Boyacá, Colombia" />
     <meta name="geo.position" content="5.7697;-72.9400" />
     <meta name="ICBM" content="5.7697, -72.9400" />
 
-    <!-- Canonical -->
+    <!-- Canonical y hreflang -->
     <link rel="canonical" href="https://afacevedom.github.io/Nobsa/" />
+    <link rel="alternate" hreflang="es-CO" href="https://afacevedom.github.io/Nobsa/" />
+    <link rel="alternate" hreflang="x-default" href="https://afacevedom.github.io/Nobsa/" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="es_CO" />
+    <meta property="og:locale:alternate" content="en_US" />
     <meta property="og:site_name" content="Nobsa, Boyacá — Crónica de Lana, Piedra y Vid" />
     <meta property="og:url" content="https://afacevedom.github.io/Nobsa/" />
     <meta property="og:title" content="Nobsa, Boyacá — Crónica de Lana, Piedra y Vid" />
-    <meta
-      property="og:description"
-      content="Guía cultural e interactiva sobre Nobsa en el Alto Chicamocha: ruanas tejidas a mano, vinos de Puntalarga, Cruz de Aranda, historia desde 1593, mapa y datos en vivo."
-    />
+    <meta property="og:description" content="Guía cultural e interactiva sobre Nobsa en el Alto Chicamocha: ruanas tejidas a mano, vinos de Puntalarga, Cruz de Aranda, historia desde 1593, mapa GPX y datos en vivo." />
     <meta property="og:image" content="https://afacevedom.github.io/Nobsa/imagenes/Parque.jpg" />
     <meta property="og:image:alt" content="Parque Principal de Nobsa, Boyacá rodeado de palmeras y arquitectura tradicional" />
 
     <!-- Twitter / X Cards -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Nobsa, Boyacá — Crónica de Lana, Piedra y Vid" />
-    <meta
-      name="twitter:description"
-      content="Explora Nobsa, Boyacá: artesanías en lana, Viñedo Marqués de Puntalarga, Cruz de Aranda, mapa interactivo, clima en vivo y agenda anual."
-    />
+    <meta name="twitter:description" content="Explora Nobsa, Boyacá: artesanías en lana, Viñedo Marqués de Puntalarga, Cruz de Aranda, mapa interactivo GPX, clima en vivo y agenda anual." />
     <meta name="twitter:image" content="https://afacevedom.github.io/Nobsa/imagenes/Parque.jpg" />
     <meta name="twitter:image:alt" content="Parque Principal de Nobsa, Boyacá" />
 
-    <!-- Iconos y Manifiesto -->
+    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <link rel="manifest" href="./site.webmanifest" />
 
     <!-- Tipografías editoriales -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -60,7 +50,21 @@
       rel="stylesheet"
     />
 
-    <!-- Datos estructurados base (actualizados dinámicamente por ruta en SeoHead.tsx) -->
+    <!-- Recuperación limpia desde 404.html en GitHub Pages -->
+    <script>
+      (function () {
+        var params = new URLSearchParams(window.location.search);
+        var p = params.get('p');
+        if (p) {
+          var base = window.location.pathname.endsWith('/')
+            ? window.location.pathname
+            : window.location.pathname + '/';
+          window.history.replaceState(null, '', base + decodeURIComponent(p));
+        }
+      })();
+    </script>
+
+    <!-- Datos estructurados base -->
     <script type="application/ld+json" data-seo-base="true">
       {
         "@context": "https://schema.org",
@@ -69,7 +73,7 @@
             "@type": "WebSite",
             "name": "Nobsa, Boyacá — Crónica de Lana, Piedra y Vid",
             "url": "https://afacevedom.github.io/Nobsa/",
-            "inLanguage": "es-CO",
+            "inLanguage": ["es-CO", "en"],
             "description": "Edición cultural e interactiva independiente dedicada al patrimonio, oficios, historia, geografía y agenda de Nobsa, Boyacá, Colombia."
           },
           {
@@ -100,12 +104,7 @@
     <noscript>
       <div style="max-width: 760px; margin: 2rem auto; padding: 1.5rem; font-family: Georgia, serif; background: #F5F1E8; color: #161917;">
         <h1>Nobsa, Boyacá — Crónica de Lana, Piedra y Vid</h1>
-        <p>
-          Guía cultural independiente sobre Nobsa, municipio ubicado en el Alto Chicamocha (Provincia del Sugamuxi, Boyacá, Colombia), a 195 km al norte de Bogotá y 71 km de Tunja.
-        </p>
-        <p>
-          Explora la tradición artesanal de la ruana, el Viñedo Marqués de Puntalarga, la Capilla de Lourdes, la Cruz de Aranda, su historia desde el 9 de enero de 1593 y el calendario de festividades activando JavaScript en tu navegador.
-        </p>
+        <p>Guía cultural independiente sobre Nobsa, municipio ubicado en el Alto Chicamocha (Provincia del Sugamuxi, Boyacá, Colombia), a 195 km al norte de Bogotá y 71 km de Tunja.</p>
       </div>
     </noscript>
     <script type="module" src="/src/main.tsx"></script>

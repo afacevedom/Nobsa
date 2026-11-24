@@ -3,9 +3,12 @@ import { Outlet } from 'react-router-dom';
 import { Header } from './Header';
 import { Footer } from './Footer';
 import { SearchCommand } from '../interactive/SearchCommand';
+import { LightboxModal } from '../interactive/LightboxModal';
+import { useLanguage } from '../../context/LanguageContext';
 
 export function MainLayout() {
   const [searchOpen, setSearchOpen] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -24,7 +27,7 @@ export function MainLayout() {
         href="#contenido-principal"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-tinta focus:px-4 focus:py-2 focus:text-sm focus:text-lana"
       >
-        Saltar al contenido principal
+        {t.skipToContent}
       </a>
 
       <Header onOpenSearch={() => setSearchOpen(true)} />
@@ -35,6 +38,7 @@ export function MainLayout() {
 
       <Footer />
       <SearchCommand open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <LightboxModal />
     </div>
   );
 }

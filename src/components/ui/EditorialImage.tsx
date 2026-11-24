@@ -1,5 +1,8 @@
 import { useState } from 'react';
+import { Expand } from 'lucide-react';
 import { getLocalImageUrl, getRemoteFallbackImageUrl } from '../../utils/assets';
+import { useLightbox } from '../../context/LightboxContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface EditorialImageProps {
   filename: string | null;
@@ -7,6 +10,8 @@ interface EditorialImageProps {
   className?: string;
   priority?: boolean;
   caption?: string;
+  credit?: string;
+  zoomable?: boolean;
 }
 
 export function EditorialImage({
@@ -15,7 +20,11 @@ export function EditorialImage({
   className = '',
   priority = false,
   caption,
+  credit,
+  zoomable = false,
 }: EditorialImageProps) {
+  const { openLightbox } = useLightbox();
+  const { t } = useLanguage();
   const [stage, setStage] = useState<'local' | 'remote' | 'fallback'>(
     filename ? 'local' : 'fallback'
   );
@@ -64,7 +73,7 @@ export function EditorialImage({
     );
   }
 
-  return (
+  const imgEl = (
     <img
       src={src}
       alt={alt}
@@ -73,5 +82,23 @@ export function EditorialImage({
       onError={handleError}
       className={className}
     />
+  );
+
+  if (!zoomable || !filename) {
+    return imgEl;
+  }
+
+  return (
+    <div className="group/zoom relative h-full w-full">
+      {imgEl}
+      <button
+        type="button"
+        onClick={() => openLightbox({ filename, alt, caption: caption || alt, credit })}
+        aria-label={`${t.zoomHint}: ${alt}`}
+        className="no-print absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-lana/25 bg-tinta/70 text-lana opacity-90 backdrop-blur-sm transition hover:bg-grana sm:opacity-0 sm:group-hover/zoom:opacity-100 sm:focus:opacity-100"
+      >
+        <Expand className="h-4 w-4" />
+      </button>
+    </div>
   );
 }

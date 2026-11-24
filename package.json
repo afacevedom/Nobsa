@@ -1,12 +1,12 @@
 {
   "name": "nobsa-boyaca-editorial",
   "private": true,
-  "version": "2.0.0",
+  "version": "3.4.0",
   "type": "module",
-  "description": "Sitio editorial e interactivo sobre Nobsa, Boyacá, Colombia — arquitectura estática lista para GitHub Pages.",
+  "description": "Sitio editorial e interactivo sobre Nobsa, Boyacá, Colombia — SSG estático con URLs limpias, OpenStreetMap avanzado, recomendador por clima, navegación Google Maps/Waze, GPX, Lightbox, bilingüe ES/EN y APIs en vivo.",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node scripts/prerender-routes.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"
   },

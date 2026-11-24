@@ -1,34 +1,54 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   ArrowDownRight,
   ArrowUpRight,
+  CalendarDays,
   Clock,
   Cloud,
   CloudFog,
   CloudLightning,
   CloudRain,
   CloudSun,
+  Compass,
   DollarSign,
   Droplets,
   ExternalLink,
-  Newspaper,
   RefreshCw,
+  Sparkles,
   Sun,
   Wind,
 } from 'lucide-react';
 import {
+  fetchColombiaHolidays,
   fetchDollarCop,
-  fetchGdeltNews,
+  fetchNobsaAirQuality,
   fetchNobsaWeather,
+  getCachedAirQuality,
+  getCachedDollar,
+  getCachedHolidays,
+  getCachedWeather,
+  type ColombiaHolidaysData,
   type DollarRateData,
-  type GdeltNewsData,
+  type NobsaAirQualityData,
   type NobsaWeatherData,
 } from '../../services/liveApis';
+import { PLACES } from '../../data/places';
+import { PLACE_EN } from '../../i18n/translations';
+import { buildWeatherRecommendation } from '../../utils/weatherRecommender';
+import { useLanguage } from '../../context/LanguageContext';
+import { MiniSparkline } from './MiniSparkline';
+import { NavigationActions } from './NavigationActions';
 
-const WEATHER_DOLLAR_REFRESH_MS = 60_000; // 60 s casi en tiempo real
-const GDELT_REFRESH_MS = 180_000; // 3 min (respetando cuota compartida de GDELT)
+const LIVE_REFRESH_MS = 60_000;
 
-function WeatherIcon({ kind, className }: { kind: NobsaWeatherData['conditionKind']; className?: string }) {
+function WeatherIcon({
+  kind,
+  className,
+}: {
+  kind: NobsaWeatherData['conditionKind'];
+  className?: string;
+}) {
   switch (kind) {
     case 'sun':
       return <Sun className={className} />;
@@ -42,6 +62,19 @@ function WeatherIcon({ kind, className }: { kind: NobsaWeatherData['conditionKin
       return <CloudRain className={className} />;
     case 'storm':
       return <CloudLightning className={className} />;
+  }
+}
+
+function getAqiBadgeStyle(level: NobsaAirQualityData['aqiLevel']): string {
+  switch (level) {
+    case 'good':
+      return 'bg-musgo text-lana';
+    case 'moderate':
+      return 'bg-trigo text-tinta';
+    case 'sensitive':
+      return 'bg-grana-light text-lana';
+    case 'unhealthy':
+      return 'bg-grana text-lana';
   }
 }
 
@@ -70,20 +103,26 @@ interface NobsaLivePulseProps {
 }
 
 export function NobsaLivePulse({ compact = false }: NobsaLivePulseProps) {
+  const { lang, t } = useLanguage();
   const [clock, setClock] = useState<string>(getNobsaClock);
-  const [weather, setWeather] = useState<NobsaWeatherData | null>(null);
-  const [weatherErr, setWeatherErr] = useState<string | null>(null);
-  const [weatherLoading, setWeatherLoading] = useState(true);
 
-  const [dollar, setDollar] = useState<DollarRateData | null>(null);
+  const [weather, setWeather] = useState<NobsaWeatherData | null>(() => getCachedWeather());
+  const [weatherErr, setWeatherErr] = useState<string | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(!weather);
+
+  const [dollar, setDollar] = useState<DollarRateData | null>(() => getCachedDollar());
   const [dollarErr, setDollarErr] = useState<string | null>(null);
-  const [dollarLoading, setDollarLoading] = useState(true);
+  const [dollarLoading, setDollarLoading] = useState(!dollar);
   const [usdInput, setUsdInput] = useState<string>('50');
 
-  const [newsScope, setNewsScope] = useState<'nobsa' | 'boyaca'>('nobsa');
-  const [news, setNews] = useState<GdeltNewsData | null>(null);
-  const [newsErr, setNewsErr] = useState<string | null>(null);
-  const [newsLoading, setNewsLoading] = useState(true);
+  const [thirdTab, setThirdTab] = useState<'air' | 'holidays'>('air');
+  const [air, setAir] = useState<NobsaAirQualityData | null>(() => getCachedAirQuality());
+  const [airErr, setAirErr] = useState<string | null>(null);
+  const [airLoading, setAirLoading] = useState(!air);
+
+  const [holidays, setHolidays] = useState<ColombiaHolidaysData | null>(() => getCachedHolidays());
+  const [holidaysErr, setHolidaysErr] = useState<string | null>(null);
+  const [holidaysLoading, setHolidaysLoading] = useState(false);
 
   const [secondsLeft, setSecondsLeft] = useState(60);
 
@@ -94,7 +133,9 @@ export function NobsaLivePulse({ compact = false }: NobsaLivePulseProps) {
       setWeather(data);
       setWeatherErr(null);
     } catch {
-      setWeatherErr('No se pudo consultar Open-Meteo en este momento.');
+      const cached = getCachedWeather();
+      if (cached) setWeather(cached);
+      else setWeatherErr('No se pudo consultar Open-Meteo en este momento.');
     } finally {
       setWeatherLoading(false);
     }
@@ -107,22 +148,41 @@ export function NobsaLivePulse({ compact = false }: NobsaLivePulseProps) {
       setDollar(data);
       setDollarErr(null);
     } catch {
-      setDollarErr('No se pudo obtener la tasa USD/COP.');
+      const cached = getCachedDollar();
+      if (cached) setDollar(cached);
+      else setDollarErr('No se pudo obtener la tasa USD/COP.');
     } finally {
       setDollarLoading(false);
     }
   }, []);
 
-  const loadNews = useCallback(async (scope: 'nobsa' | 'boyaca') => {
-    setNewsLoading(true);
+  const loadAir = useCallback(async () => {
+    setAirLoading(true);
     try {
-      const data = await fetchGdeltNews(scope);
-      setNews(data);
-      setNewsErr(null);
+      const data = await fetchNobsaAirQuality();
+      setAir(data);
+      setAirErr(null);
     } catch {
-      setNewsErr('GDELT está ocupado en este momento. Intenta refrescar en unos segundos.');
+      const cached = getCachedAirQuality();
+      if (cached) setAir(cached);
+      else setAirErr('No se pudo consultar calidad del aire en este momento.');
     } finally {
-      setNewsLoading(false);
+      setAirLoading(false);
+    }
+  }, []);
+
+  const loadHolidays = useCallback(async () => {
+    setHolidaysLoading(true);
+    try {
+      const data = await fetchColombiaHolidays();
+      setHolidays(data);
+      setHolidaysErr(null);
+    } catch {
+      const cached = getCachedHolidays();
+      if (cached) setHolidays(cached);
+      else setHolidaysErr('No se pudieron cargar los festivos de Colombia.');
+    } finally {
+      setHolidaysLoading(false);
     }
   }, []);
 
@@ -131,11 +191,13 @@ export function NobsaLivePulse({ compact = false }: NobsaLivePulseProps) {
     void loadWeather();
     void loadDollar();
     if (!compact) {
-      void loadNews(newsScope);
+      void loadAir();
+      if (thirdTab === 'holidays') {
+        void loadHolidays();
+      }
     }
-  }, [compact, loadDollar, loadNews, loadWeather, newsScope]);
+  }, [compact, loadAir, loadDollar, loadHolidays, loadWeather, thirdTab]);
 
-  // Reloj local de Nobsa + cuenta regresiva de refresco
   useEffect(() => {
     const tick = window.setInterval(() => {
       setClock(getNobsaClock());
@@ -144,49 +206,57 @@ export function NobsaLivePulse({ compact = false }: NobsaLivePulseProps) {
     return () => window.clearInterval(tick);
   }, []);
 
-  // Carga inicial y refresco automático cada 60 s para Clima y Dólar
   useEffect(() => {
     void loadWeather();
     void loadDollar();
+    if (!compact) {
+      void loadAir();
+    }
 
     const interval = window.setInterval(() => {
-      if (!document.hidden) {
+      if (!document.hidden && navigator.onLine) {
         void loadWeather();
         void loadDollar();
+        if (!compact) {
+          void loadAir();
+        }
         setSecondsLeft(60);
       }
-    }, WEATHER_DOLLAR_REFRESH_MS);
+    }, LIVE_REFRESH_MS);
 
-    const onVisibility = () => {
-      if (!document.hidden) {
-        void loadWeather();
-        void loadDollar();
-      }
+    const onOnline = () => {
+      void loadWeather();
+      void loadDollar();
+      if (!compact) void loadAir();
     };
-    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('online', onOnline);
 
     return () => {
       window.clearInterval(interval);
-      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('online', onOnline);
     };
-  }, [loadWeather, loadDollar]);
+  }, [compact, loadAir, loadDollar, loadWeather]);
 
-  // Carga inicial y refresco cada 3 min para GDELT (solo en modo completo)
+  // Carga bajo demanda de festivos de Colombia al abrir la pestaña «Puentes CO»
   useEffect(() => {
-    if (compact) return;
-    void loadNews(newsScope);
-    const interval = window.setInterval(() => {
-      if (!document.hidden) {
-        void loadNews(newsScope);
-      }
-    }, GDELT_REFRESH_MS);
-    return () => window.clearInterval(interval);
-  }, [compact, loadNews, newsScope]);
+    if (!compact && thirdTab === 'holidays' && !holidays) {
+      void loadHolidays();
+    }
+  }, [compact, thirdTab, holidays, loadHolidays]);
 
   const parsedUsd = Math.max(0, Number(usdInput) || 0);
   const convertedCop = dollar ? parsedUsd * dollar.rateCop : 0;
+  const weatherLabel = weather
+    ? lang === 'en'
+      ? weather.conditionLabelEn
+      : weather.conditionLabel
+    : '';
 
-  // Variante compacta para la página de Mapa y Territorio
+  const recommendation = useMemo(
+    () => (weather ? buildWeatherRecommendation(weather, lang) : null),
+    [weather, lang]
+  );
+
   if (compact) {
     return (
       <div className="rounded-2xl border border-tinta/15 bg-lana-soft p-4 shadow-sm">
@@ -197,13 +267,20 @@ export function NobsaLivePulse({ compact = false }: NobsaLivePulseProps) {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-musgo opacity-75 motion-reduce:animate-none" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-musgo" />
               </span>
-              Nobsa en vivo · {clock}
+              Nobsa · {clock}
             </span>
 
             {weather && (
               <span className="inline-flex items-center gap-1.5 font-medium text-tinta">
                 <WeatherIcon kind={weather.conditionKind} className="h-4 w-4 text-trigo" />
-                {weather.temperature.toFixed(1)} °C · {weather.conditionLabel}
+                {weather.temperature.toFixed(1)} °C · {weatherLabel}
+              </span>
+            )}
+
+            {recommendation && (
+              <span className="hidden items-center gap-1.5 rounded-full bg-musgo/10 px-2.5 py-0.5 font-mono text-[11px] text-musgo xl:inline-flex">
+                <Sparkles className="h-3 w-3" />
+                {recommendation.badge}
               </span>
             )}
 
@@ -221,7 +298,7 @@ export function NobsaLivePulse({ compact = false }: NobsaLivePulseProps) {
             className="inline-flex items-center gap-1.5 rounded-full border border-tinta/15 bg-lana px-3 py-1.5 font-mono text-[11px] text-tinta transition hover:border-grana hover:text-grana"
           >
             <RefreshCw className={`h-3 w-3 ${weatherLoading || dollarLoading ? 'animate-spin' : ''}`} />
-            Actualizar
+            {t.liveRefresh}
           </button>
         </div>
       </div>
@@ -234,7 +311,6 @@ export function NobsaLivePulse({ compact = false }: NobsaLivePulseProps) {
       className="border-b border-tinta/10 bg-lana-deep/65 py-12 sm:py-16"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Encabezado del pulso en vivo */}
         <div className="flex flex-col justify-between gap-4 border-b border-tinta/10 pb-6 md:flex-row md:items-end">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-musgo/30 bg-musgo/10 px-3 py-1 font-mono text-[11px] uppercase tracking-widest text-musgo">
@@ -242,20 +318,22 @@ export function NobsaLivePulse({ compact = false }: NobsaLivePulseProps) {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-musgo opacity-75 motion-reduce:animate-none" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-musgo" />
               </span>
-              Datos en tiempo real · Boyacá
+              {t.liveBadge}
             </div>
             <h2
               id="nobsa-en-vivo-titulo"
               className="mt-3 font-display text-2xl font-semibold tracking-tight text-tinta sm:text-3xl lg:text-4xl"
             >
-              Nobsa en vivo ahora mismo
+              {t.liveTitle}
             </h2>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-tinta/10 bg-lana-soft px-3.5 py-2 font-mono text-xs text-tinta">
               <Clock className="h-3.5 w-3.5 text-grana" />
-              <span>Hora local: {clock}</span>
+              <span>
+                {t.liveLocalTime}: {clock}
+              </span>
             </span>
             <button
               type="button"
@@ -264,32 +342,32 @@ export function NobsaLivePulse({ compact = false }: NobsaLivePulseProps) {
             >
               <RefreshCw
                 className={`h-3.5 w-3.5 ${
-                  weatherLoading || dollarLoading || newsLoading ? 'animate-spin' : ''
+                  weatherLoading || dollarLoading || airLoading ? 'animate-spin' : ''
                 }`}
               />
-              Actualizar ({secondsLeft}s)
+              {t.liveRefresh} ({secondsLeft}s)
             </button>
           </div>
         </div>
 
-        {/* Grid responsivo: 1 col móvil, 2 cols tablet, 12 cols escritorio */}
+        {/* 3 TARJETAS EN VIVO (100 % CORS NATIVO SIN PROXIES) */}
         <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-12">
-          {/* TARJETA 1: OPEN-METEO */}
+          {/* TARJETA 1: OPEN-METEO CLIMA + CURVA 12 HORAS */}
           <article className="flex flex-col justify-between rounded-3xl border border-tinta/10 bg-lana-soft p-6 shadow-sm lg:col-span-4">
             <div>
               <div className="flex items-center justify-between gap-2">
                 <span className="font-mono text-[11px] uppercase tracking-widest text-grana">
-                  Clima · Open-Meteo
+                  {t.weatherTitle}
                 </span>
                 <span className="font-mono text-[10px] text-tinta-soft">
-                  {formatTimeShort(weather?.fetchedAt ?? null)}
+                  {weather?.fromCache ? t.liveCachedNotice : formatTimeShort(weather?.fetchedAt ?? null)}
                 </span>
               </div>
 
               {weatherLoading && !weather ? (
                 <div className="mt-6 space-y-3 animate-pulse">
                   <div className="h-12 w-32 rounded-xl bg-lana-deep" />
-                  <div className="h-4 w-48 rounded bg-lana-deep" />
+                  <div className="h-14 w-full rounded-xl bg-lana-deep" />
                   <div className="h-16 w-full rounded-xl bg-lana-deep" />
                 </div>
               ) : weatherErr && !weather ? (
@@ -302,9 +380,9 @@ export function NobsaLivePulse({ compact = false }: NobsaLivePulseProps) {
                         {weather.temperature.toFixed(1)}°
                         <span className="text-xl font-normal text-tinta-muted">C</span>
                       </p>
-                      <p className="mt-1 text-sm font-medium text-tinta">{weather.conditionLabel}</p>
+                      <p className="mt-1 text-sm font-medium text-tinta">{weatherLabel}</p>
                       <p className="text-xs text-tinta-muted">
-                        Sensación {weather.apparentTemperature.toFixed(1)} °C · Nobsa
+                        {t.weatherFeels} {weather.apparentTemperature.toFixed(1)} °C · Nobsa
                       </p>
                     </div>
                     <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-lana-deep text-trigo">
@@ -312,29 +390,46 @@ export function NobsaLivePulse({ compact = false }: NobsaLivePulseProps) {
                     </div>
                   </div>
 
-                  <div className="mt-5 grid grid-cols-2 gap-3 rounded-2xl bg-lana p-3.5 text-xs">
+                  <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl bg-lana p-3 text-xs">
                     <div className="flex items-center gap-2">
                       <Droplets className="h-4 w-4 text-indigo-telar" />
                       <div>
-                        <p className="text-tinta-soft">Humedad</p>
+                        <p className="text-tinta-soft">{t.weatherHumidity}</p>
                         <p className="font-mono font-semibold text-tinta">{weather.humidity}%</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Wind className="h-4 w-4 text-musgo" />
                       <div>
-                        <p className="text-tinta-soft">Viento</p>
+                        <p className="text-tinta-soft">{t.weatherWind}</p>
                         <p className="font-mono font-semibold text-tinta">{weather.windSpeed} km/h</p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Pronóstico 3 días */}
-                  <div className="mt-4 grid grid-cols-3 gap-2">
+                  {weather.hourly && weather.hourly.length >= 2 && (
+                    <div className="mt-4 rounded-2xl border border-tinta/10 bg-lana p-3.5">
+                      <p className="mb-1.5 font-mono text-[10px] uppercase tracking-wider text-tinta-soft">
+                        {t.weatherNext12h}
+                      </p>
+                      <MiniSparkline
+                        points={weather.hourly.map((h) => ({
+                          label: h.hourLabel,
+                          value: h.temperature,
+                        }))}
+                        strokeColor="#C98E2B"
+                        fillColor="rgba(201, 142, 43, 0.14)"
+                        unitSuffix="°C"
+                        ariaLabel="Temperatura por horas en Nobsa durante las próximas 12 horas"
+                      />
+                    </div>
+                  )}
+
+                  <div className="mt-3 grid grid-cols-3 gap-2">
                     {weather.forecast.map((day) => (
                       <div
                         key={day.date}
-                        className="rounded-xl border border-tinta/10 bg-lana p-2.5 text-center"
+                        className="rounded-xl border border-tinta/10 bg-lana p-2 text-center"
                       >
                         <p className="font-mono text-[10px] uppercase text-tinta-soft">
                           {day.label}
@@ -343,7 +438,7 @@ export function NobsaLivePulse({ compact = false }: NobsaLivePulseProps) {
                           {day.tempMax}° / {day.tempMin}°
                         </p>
                         <p className="mt-0.5 text-[10px] text-indigo-telar">
-                          {day.precipProb}% lluvia
+                          {day.precipProb}%
                         </p>
                       </div>
                     ))}
@@ -352,28 +447,28 @@ export function NobsaLivePulse({ compact = false }: NobsaLivePulseProps) {
               ) : null}
             </div>
 
-            <p className="mt-5 border-t border-tinta/10 pt-3 text-[11px] text-tinta-soft">
-              Consejo de altura: lleva ruana de lana para el atardecer en el Alto Chicamocha.
+            <p className="mt-4 border-t border-tinta/10 pt-3 text-[11px] text-tinta-soft">
+              {t.weatherTip}
             </p>
           </article>
 
-          {/* TARJETA 2: PRECIO DEL DÓLAR EN COLOMBIA (USD -> COP) */}
+          {/* TARJETA 2: DÓLAR HOY + TENDENCIA 7 DÍAS */}
           <article className="flex flex-col justify-between rounded-3xl border border-tinta/10 bg-lana-soft p-6 shadow-sm lg:col-span-4">
             <div>
               <div className="flex items-center justify-between gap-2">
                 <span className="font-mono text-[11px] uppercase tracking-widest text-grana">
-                  Dólar hoy · Colombia
+                  {t.dollarTitle}
                 </span>
                 <span className="font-mono text-[10px] text-tinta-soft">
-                  {formatTimeShort(dollar?.fetchedAt ?? null)}
+                  {dollar?.fromCache ? t.liveCachedNotice : formatTimeShort(dollar?.fetchedAt ?? null)}
                 </span>
               </div>
 
               {dollarLoading && !dollar ? (
                 <div className="mt-6 space-y-3 animate-pulse">
                   <div className="h-12 w-44 rounded-xl bg-lana-deep" />
-                  <div className="h-4 w-40 rounded bg-lana-deep" />
-                  <div className="h-24 w-full rounded-xl bg-lana-deep" />
+                  <div className="h-16 w-full rounded-xl bg-lana-deep" />
+                  <div className="h-20 w-full rounded-xl bg-lana-deep" />
                 </div>
               ) : dollarErr && !dollar ? (
                 <p className="mt-6 text-sm text-tinta-muted">{dollarErr}</p>
@@ -381,8 +476,12 @@ export function NobsaLivePulse({ compact = false }: NobsaLivePulseProps) {
                 <>
                   <div className="mt-5">
                     <div className="flex flex-wrap items-baseline gap-2">
-                      <p className="font-display text-4xl font-semibold text-tinta sm:text-[2.6rem]">
-                        ${dollar.rateCop.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <p className="font-display text-4xl font-semibold text-tinta sm:text-[2.5rem]">
+                        $
+                        {dollar.rateCop.toLocaleString('es-CO', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
                       </p>
                       <span className="font-mono text-xs uppercase text-tinta-muted">COP / USD</span>
                     </div>
@@ -406,17 +505,35 @@ export function NobsaLivePulse({ compact = false }: NobsaLivePulseProps) {
                           {dollar.changePct.toFixed(2)}%)
                         </span>
                       )}
-                      <span className="text-tinta-muted">Vigencia: {dollar.effectiveDate}</span>
+                      <span className="text-tinta-muted">
+                        {t.dollarValid}: {dollar.effectiveDate}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Conversor útil para viajeros y compras de artesanías */}
-                  <div className="mt-5 rounded-2xl border border-tinta/10 bg-lana p-4">
+                  {dollar.history && dollar.history.length >= 2 && (
+                    <div className="mt-4 rounded-2xl border border-tinta/10 bg-lana p-3.5">
+                      <p className="mb-1.5 font-mono text-[10px] uppercase tracking-wider text-tinta-soft">
+                        {t.dollarTrend7d}
+                      </p>
+                      <MiniSparkline
+                        points={dollar.history.map((h) => ({
+                          label: h.date,
+                          value: h.rateCop,
+                        }))}
+                        strokeColor="#8F2429"
+                        fillColor="rgba(143, 36, 41, 0.12)"
+                        ariaLabel="Tendencia de la TRM en Colombia en los últimos 7 días"
+                      />
+                    </div>
+                  )}
+
+                  <div className="mt-4 rounded-2xl border border-tinta/10 bg-lana p-3.5">
                     <label
                       htmlFor="usd-converter-input"
                       className="block font-mono text-[10px] uppercase tracking-wider text-tinta-soft"
                     >
-                      Calculadora rápida para viajeros (USD → COP)
+                      {t.dollarCalcLabel}
                     </label>
                     <div className="mt-2 flex items-center gap-2">
                       <div className="relative flex-1">
@@ -430,7 +547,7 @@ export function NobsaLivePulse({ compact = false }: NobsaLivePulseProps) {
                           step="1"
                           value={usdInput}
                           onChange={(e) => setUsdInput(e.target.value)}
-                          className="w-full rounded-xl border border-tinta/15 bg-lana-soft py-2 pl-10 pr-3 font-mono text-sm font-semibold text-tinta focus:border-grana focus:outline-none"
+                          className="w-full rounded-xl border border-tinta/15 bg-lana-soft py-2 pl-10 pr-2 font-mono text-sm font-semibold text-tinta focus:border-grana focus:outline-none"
                         />
                       </div>
                       <span className="font-mono text-xs text-tinta-soft">=</span>
@@ -443,7 +560,7 @@ export function NobsaLivePulse({ compact = false }: NobsaLivePulseProps) {
               ) : null}
             </div>
 
-            <div className="mt-5 flex items-center justify-between gap-2 border-t border-tinta/10 pt-3 text-[11px] text-tinta-soft">
+            <div className="mt-4 flex items-center justify-between gap-2 border-t border-tinta/10 pt-3 text-[11px] text-tinta-soft">
               <span className="truncate">{dollar?.sourceLabel || 'TRM Colombia'}</span>
               {dollar?.sourceUrl && (
                 <a
@@ -452,96 +569,287 @@ export function NobsaLivePulse({ compact = false }: NobsaLivePulseProps) {
                   rel="noopener noreferrer"
                   className="inline-flex shrink-0 items-center gap-1 font-mono text-grana hover:underline"
                 >
-                  Fuente <ExternalLink className="h-3 w-3" />
+                  {t.dollarSource} <ExternalLink className="h-3 w-3" />
                 </a>
               )}
             </div>
           </article>
 
-          {/* TARJETA 3: GDELT DOC 2.0 (NOTICIAS EN VIVO) */}
+          {/* TARJETA 3: CALIDAD DEL AIRE & ÍNDICE UV (OPEN-METEO) + PUENTES FESTIVOS CO */}
           <article className="flex flex-col justify-between rounded-3xl border border-tinta/10 bg-tinta p-6 text-lana shadow-sm bg-loom-grid md:col-span-2 lg:col-span-4">
             <div>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-trigo-soft">
-                  <Newspaper className="h-3.5 w-3.5" />
-                  Pulso mediático · GDELT
+                  {thirdTab === 'air' ? (
+                    <>
+                      <Sun className="h-3.5 w-3.5" />
+                      {t.airTitle}
+                    </>
+                  ) : (
+                    <>
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      {t.holidaysTitle}
+                    </>
+                  )}
                 </span>
 
                 <div className="inline-flex rounded-full border border-lana/15 bg-lana/5 p-0.5 text-[10px]">
                   <button
                     type="button"
-                    onClick={() => setNewsScope('nobsa')}
-                    aria-pressed={newsScope === 'nobsa'}
+                    onClick={() => setThirdTab('air')}
+                    aria-pressed={thirdTab === 'air'}
                     className={`rounded-full px-2.5 py-1 font-mono transition ${
-                      newsScope === 'nobsa' ? 'bg-trigo text-tinta font-semibold' : 'text-lana/75 hover:text-lana'
+                      thirdTab === 'air'
+                        ? 'bg-trigo font-semibold text-tinta'
+                        : 'text-lana/75 hover:text-lana'
                     }`}
                   >
-                    Nobsa
+                    {lang === 'en' ? 'Air & UV' : 'Aire y UV'}
                   </button>
                   <button
                     type="button"
-                    onClick={() => setNewsScope('boyaca')}
-                    aria-pressed={newsScope === 'boyaca'}
+                    onClick={() => setThirdTab('holidays')}
+                    aria-pressed={thirdTab === 'holidays'}
                     className={`rounded-full px-2.5 py-1 font-mono transition ${
-                      newsScope === 'boyaca' ? 'bg-trigo text-tinta font-semibold' : 'text-lana/75 hover:text-lana'
+                      thirdTab === 'holidays'
+                        ? 'bg-trigo font-semibold text-tinta'
+                        : 'text-lana/75 hover:text-lana'
                     }`}
                   >
-                    Boyacá
+                    {lang === 'en' ? 'CO Holidays' : 'Puentes CO'}
                   </button>
                 </div>
               </div>
 
-              {newsLoading && !news ? (
+              {thirdTab === 'air' ? (
+                airLoading && !air ? (
+                  <div className="mt-6 space-y-3 animate-pulse">
+                    <div className="h-12 w-36 rounded-xl bg-lana/10" />
+                    <div className="h-14 w-full rounded-xl bg-lana/10" />
+                    <div className="h-16 w-full rounded-xl bg-lana/10" />
+                  </div>
+                ) : airErr && !air ? (
+                  <p className="mt-6 text-xs text-lana/80">{airErr}</p>
+                ) : air ? (
+                  <>
+                    <div className="mt-5 flex items-center justify-between gap-3">
+                      <div>
+                        <div className="flex items-baseline gap-2.5">
+                          <p className="font-display text-4xl font-semibold text-lana sm:text-5xl">
+                            {air.usAqi}
+                          </p>
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 font-mono text-[11px] font-semibold ${getAqiBadgeStyle(
+                              air.aqiLevel
+                            )}`}
+                          >
+                            {lang === 'en' ? air.aqiLabelEn : air.aqiLabelEs}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs text-lana/70">
+                          {lang === 'en'
+                            ? 'US Air Quality Index · Alto Chicamocha'
+                            : 'Índice Calidad del Aire (US AQI) · Nobsa'}
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-lana/15 bg-lana/10 px-3.5 py-2.5 text-center">
+                        <p className="font-mono text-[10px] uppercase text-trigo-soft">UV</p>
+                        <p className="font-display text-2xl font-semibold text-lana">
+                          {air.uvIndex.toFixed(1)}
+                        </p>
+                        <p className="font-mono text-[10px] text-lana/70">
+                          {lang === 'en' ? air.uvLabelEn : air.uvLabelEs}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Métricas PM2.5, PM10 y Ozono */}
+                    <div className="mt-4 grid grid-cols-3 gap-2 rounded-2xl border border-lana/10 bg-lana/[0.06] p-3 text-center">
+                      <div>
+                        <p className="font-mono text-[10px] text-lana/60">PM2.5</p>
+                        <p className="mt-0.5 font-mono text-xs font-semibold text-lana">
+                          {air.pm25.toFixed(1)}
+                        </p>
+                        <p className="text-[9px] text-lana/50">µg/m³</p>
+                      </div>
+                      <div className="border-x border-lana/10">
+                        <p className="font-mono text-[10px] text-lana/60">PM10</p>
+                        <p className="mt-0.5 font-mono text-xs font-semibold text-lana">
+                          {air.pm10.toFixed(1)}
+                        </p>
+                        <p className="text-[9px] text-lana/50">µg/m³</p>
+                      </div>
+                      <div>
+                        <p className="font-mono text-[10px] text-lana/60">
+                          {lang === 'en' ? 'Max UV' : 'UV máx.'}
+                        </p>
+                        <p className="mt-0.5 font-mono text-xs font-semibold text-trigo-soft">
+                          {air.maxUv12h.toFixed(1)}
+                        </p>
+                        <p className="text-[9px] text-lana/50">12 h</p>
+                      </div>
+                    </div>
+
+                    {/* Curva PM2.5 12h */}
+                    {air.hourly.length >= 2 && (
+                      <div className="mt-4 rounded-2xl border border-lana/10 bg-lana/[0.05] p-3.5">
+                        <p className="mb-1.5 font-mono text-[10px] uppercase tracking-wider text-lana/65">
+                          {lang === 'en'
+                            ? 'PM2.5 particle curve (next 12h)'
+                            : 'Material particulado PM2.5 (próximas 12 h)'}
+                        </p>
+                        <MiniSparkline
+                          points={air.hourly.map((h) => ({
+                            label: h.hourLabel,
+                            value: h.pm25,
+                          }))}
+                          strokeColor="#E3B45A"
+                          fillColor="rgba(227, 180, 90, 0.16)"
+                          unitSuffix=""
+                          ariaLabel="Evolución de PM2.5 en Nobsa durante las próximas 12 horas"
+                        />
+                      </div>
+                    )}
+                  </>
+                ) : null
+              ) : holidaysLoading && !holidays ? (
                 <div className="mt-5 space-y-3 animate-pulse">
-                  <div className="h-12 rounded-xl bg-lana/10" />
-                  <div className="h-12 rounded-xl bg-lana/10" />
-                  <div className="h-12 rounded-xl bg-lana/10" />
+                  <div className="h-11 rounded-xl bg-lana/10" />
+                  <div className="h-11 rounded-xl bg-lana/10" />
+                  <div className="h-11 rounded-xl bg-lana/10" />
                 </div>
-              ) : newsErr && !news ? (
+              ) : holidaysErr && !holidays ? (
                 <div className="mt-5 rounded-2xl border border-lana/15 bg-lana/5 p-4 text-xs text-lana/80">
-                  <p>{newsErr}</p>
+                  <p>{holidaysErr}</p>
                   <button
                     type="button"
-                    onClick={() => void loadNews(newsScope)}
+                    onClick={() => void loadHolidays()}
                     className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-trigo px-3 py-1.5 font-mono text-[11px] font-semibold text-tinta"
                   >
-                    <RefreshCw className="h-3 w-3" /> Reintentar GDELT
+                    <RefreshCw className="h-3 w-3" /> {t.liveRefresh}
                   </button>
                 </div>
-              ) : news && news.articles.length > 0 ? (
+              ) : holidays ? (
                 <ul className="mt-4 divide-y divide-lana/10">
-                  {news.articles.slice(0, 4).map((art) => (
-                    <li key={art.url} className="py-3 first:pt-1 last:pb-0">
-                      <a
-                        href={art.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group block"
-                      >
-                        <p className="line-clamp-2 text-xs font-medium leading-snug text-lana transition group-hover:text-trigo-soft sm:text-sm">
-                          {art.title}
-                        </p>
-                        <div className="mt-1 flex items-center justify-between gap-2 font-mono text-[10px] text-lana/60">
-                          <span className="truncate">{art.domain}</span>
-                          <span className="shrink-0">{art.seenDateFormatted}</span>
+                  {holidays.holidays.map((h) => (
+                    <li
+                      key={`${h.date}-${h.localName}`}
+                      className="flex items-center justify-between gap-3 py-2.5 first:pt-1 last:pb-0"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="font-mono text-[10px] uppercase text-trigo-soft">
+                            {h.formattedDate}
+                          </span>
+                          {h.isLongWeekend && (
+                            <span className="rounded-full bg-trigo/20 px-2 py-0.5 font-mono text-[9px] font-semibold uppercase text-trigo-soft">
+                              Puente
+                            </span>
+                          )}
                         </div>
-                      </a>
+                        <p className="truncate text-xs font-medium text-lana sm:text-sm">
+                          {h.localName}
+                        </p>
+                      </div>
+                      <span className="shrink-0 rounded-full border border-lana/15 bg-lana/5 px-2.5 py-1 font-mono text-[10px] text-lana/85">
+                        {h.daysUntil === 0
+                          ? '¡Hoy!'
+                          : lang === 'en'
+                          ? `In ${h.daysUntil}d`
+                          : `En ${h.daysUntil} d`}
+                      </span>
                     </li>
                   ))}
                 </ul>
-              ) : (
-                <p className="mt-5 text-xs text-lana/75">
-                  No se encontraron titulares recientes en esta ventana de GDELT. Prueba cambiar al filtro «Boyacá».
-                </p>
-              )}
+              ) : null}
             </div>
 
-            <div className="mt-5 flex items-center justify-between gap-2 border-t border-lana/15 pt-3 text-[11px] text-lana/60">
-              <span>GDELT Project DOC 2.0 (refresco c/3 min)</span>
-              <span className="font-mono">{formatTimeShort(news?.fetchedAt ?? null)}</span>
+            <div className="mt-4 flex items-center justify-between gap-2 border-t border-lana/15 pt-3 text-[11px] text-lana/65">
+              <span>
+                {thirdTab === 'air'
+                  ? t.airFooter
+                  : holidays?.sourceLabel || 'Calendario Festivos Colombia'}
+              </span>
+              <span className="font-mono">
+                {thirdTab === 'air'
+                  ? formatTimeShort(air?.fetchedAt ?? null)
+                  : formatTimeShort(holidays?.fetchedAt ?? null)}
+              </span>
             </div>
           </article>
         </div>
+
+        {/* RECOMENDADOR INTELIGENTE «¿QUÉ PLAN CONVIENE HOY?» CONECTADO A OPEN-METEO */}
+        {recommendation && (
+          <div className="mt-8 rounded-3xl border border-tinta/15 bg-lana-soft p-6 shadow-sm sm:p-8">
+            <div className="flex flex-col justify-between gap-4 border-b border-tinta/10 pb-5 lg:flex-row lg:items-end">
+              <div className="max-w-3xl">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-grana/10 px-3 py-1 font-mono text-[11px] uppercase tracking-wider text-grana">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {recommendation.badge}
+                </span>
+                <h3 className="mt-2.5 font-display text-2xl font-semibold text-tinta sm:text-3xl">
+                  {recommendation.headline}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-tinta-muted">
+                  {recommendation.advice}
+                </p>
+              </div>
+              <Link
+                to="/territorio"
+                className="inline-flex min-h-[40px] shrink-0 items-center gap-2 self-start rounded-full border border-tinta/20 bg-lana px-4 py-2 text-xs font-semibold text-tinta transition hover:border-grana hover:text-grana lg:self-auto"
+              >
+                <Compass className="h-4 w-4 text-grana" />
+                {lang === 'en' ? 'See all stops on map' : 'Ver todos los puntos en el mapa'}
+              </Link>
+            </div>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-3">
+              {recommendation.stops.map((rec, idx) => {
+                const place = PLACES.find((p) => p.id === rec.placeId);
+                if (!place) return null;
+                const title =
+                  lang === 'en' && PLACE_EN[place.id] ? PLACE_EN[place.id].name : place.name;
+                return (
+                  <div
+                    key={place.id}
+                    className="flex flex-col justify-between rounded-2xl border border-tinta/10 bg-lana p-4 sm:p-5"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-mono text-[10px] uppercase tracking-widest text-grana">
+                          0{idx + 1} · {place.highlightTag}
+                        </span>
+                      </div>
+                      <Link
+                        to={`/territorio?lugar=${place.id}`}
+                        className="mt-1.5 block font-display text-lg font-semibold text-tinta hover:text-grana"
+                      >
+                        {title}
+                      </Link>
+                      <p className="mt-2 text-xs leading-relaxed text-tinta-muted">{rec.reason}</p>
+                    </div>
+
+                    <div className="mt-4 border-t border-tinta/10 pt-3">
+                      {place.lat !== null && place.lon !== null ? (
+                        <NavigationActions lat={place.lat} lon={place.lon} compact />
+                      ) : (
+                        <Link
+                          to={`/territorio?lugar=${place.id}`}
+                          className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold text-grana hover:underline"
+                        >
+                          {lang === 'en' ? 'View craft guide' : 'Ver ficha artesanal'}{' '}
+                          <ArrowUpRight className="h-3.5 w-3.5" />
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
 import { CRAFTS_AND_FLAVORS, RUANA_HIGHLIGHTS } from '../data/crafts';
+import { useLanguage } from '../context/LanguageContext';
 import { EditorialImage } from '../components/ui/EditorialImage';
 import { Reveal } from '../components/ui/Reveal';
 import { SectionHeader } from '../components/ui/SectionHeader';
@@ -19,6 +20,7 @@ const FILTERS: { id: FilterType; label: string }[] = [
 
 export function CraftsmanshipPage() {
   const [filter, setFilter] = useState<FilterType>('todos');
+  const { lang } = useLanguage();
 
   const items =
     filter === 'todos'
@@ -32,7 +34,7 @@ export function CraftsmanshipPage() {
         name: 'Oficios y Sabores de Nobsa, Boyacá',
         description:
           'Catálogo editorial de la ruana en lana virgen, forja artesanal, talla en piedra y madera, campanas artesanales, vinos Marqués de Puntalarga y dulces de breva y uva.',
-        url: 'https://afacevedom.github.io/Nobsa/#/oficios',
+        url: 'https://afacevedom.github.io/Nobsa/oficios/',
       },
       {
         '@type': 'ItemList',
@@ -48,7 +50,7 @@ export function CraftsmanshipPage() {
         '@type': 'BreadcrumbList',
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'Inicio', item: 'https://afacevedom.github.io/Nobsa/' },
-          { '@type': 'ListItem', position: 2, name: 'Oficios y Sabores', item: 'https://afacevedom.github.io/Nobsa/#/oficios' },
+          { '@type': 'ListItem', position: 2, name: 'Oficios y Sabores', item: 'https://afacevedom.github.io/Nobsa/oficios/' },
         ],
       },
     ],
@@ -67,15 +69,18 @@ export function CraftsmanshipPage() {
         jsonLd={pageJsonLd}
       />
 
-      {/* Cabecera editorial */}
       <section className="border-b border-tinta/10 bg-paper-grid py-12 sm:py-20">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-12 lg:items-center lg:gap-10 lg:px-8">
           <div className="lg:col-span-7">
             <SectionHeader
               as="h1"
               index="02"
-              eyebrow="Artesanía, identidad y mesa"
-              title="La ruana de Nobsa y el mosaico de sus oficios"
+              eyebrow={lang === 'en' ? 'Crafts, identity & table' : 'Artesanía, identidad y mesa'}
+              title={
+                lang === 'en'
+                  ? 'The Nobsa wool ruana and its mosaic of crafts'
+                  : 'La ruana de Nobsa y el mosaico de sus oficios'
+              }
               lead="Desde la lana tejida en talleres familiares hasta la forja, las campanas artesanales, la talla en piedra y los vinos de Puntalarga, la cultura material de Nobsa se aprende mirando las manos de su gente."
             />
             <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -97,7 +102,9 @@ export function CraftsmanshipPage() {
               <EditorialImage
                 filename="NataliaParisRuana.jpg"
                 alt="Ruana tejida en lana tradicional de Nobsa, Boyacá"
+                caption="Ruana en lana virgen — emblema artesanal de Nobsa."
                 priority
+                zoomable
                 className="aspect-[4/3] w-full object-cover"
               />
             </div>
@@ -105,7 +112,6 @@ export function CraftsmanshipPage() {
         </div>
       </section>
 
-      {/* Cifras verificadas de la ruana */}
       <section className="bg-tinta py-12 text-lana bg-loom-grid sm:py-14">
         <div className="mx-auto grid max-w-7xl gap-4 px-4 sm:grid-cols-3 sm:gap-6 sm:px-6 lg:px-8">
           {RUANA_HIGHLIGHTS.map((stat) => (
@@ -119,7 +125,6 @@ export function CraftsmanshipPage() {
         </div>
       </section>
 
-      {/* Catálogo filtrable de oficios y sabores */}
       <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
         <div
           className="flex flex-wrap gap-2"
@@ -157,6 +162,8 @@ export function CraftsmanshipPage() {
                   <EditorialImage
                     filename={item.image}
                     alt={item.imageAlt || item.name}
+                    caption={item.name}
+                    zoomable
                     className="aspect-[16/10] w-full object-cover"
                   />
                 )}

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, Search, X } from 'lucide-react';
 import { searchNobsa } from '../../utils/search';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface SearchCommandProps {
   open: boolean;
@@ -12,6 +13,7 @@ export function SearchCommand({ open, onClose }: SearchCommandProps) {
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const results = useMemo(() => searchNobsa(query), [query]);
 
@@ -36,7 +38,7 @@ export function SearchCommand({ open, onClose }: SearchCommandProps) {
       className="fixed inset-0 z-50 flex items-start justify-center bg-tinta/70 px-4 pt-16 backdrop-blur-sm sm:pt-24"
       role="dialog"
       aria-modal="true"
-      aria-label="Buscar en Nobsa"
+      aria-label={t.searchBtn}
       onClick={onClose}
     >
       <div
@@ -50,7 +52,7 @@ export function SearchCommand({ open, onClose }: SearchCommandProps) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar lugares, ruana, Puntalarga, Cruz de Aranda, 1593…"
+            placeholder={t.searchPlaceholder}
             className="w-full bg-transparent text-sm text-tinta placeholder:text-tinta-soft focus:outline-none sm:text-base"
           />
           <button
@@ -65,9 +67,7 @@ export function SearchCommand({ open, onClose }: SearchCommandProps) {
 
         <div className="max-h-[60vh] overflow-y-auto p-2">
           {results.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-tinta-muted">
-              No se encontraron coincidencias para “{query}”. Prueba con «ruana», «vino», «San Roque» o «1593».
-            </p>
+            <p className="px-4 py-8 text-center text-sm text-tinta-muted">{t.searchEmpty}</p>
           ) : (
             <ul className="divide-y divide-tinta/5">
               {results.map((item) => (

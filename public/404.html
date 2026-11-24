@@ -1,27 +1,31 @@
 <!doctype html>
-<html lang="es">
+<html lang="es-CO">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Redirigiendo — Nobsa, Boyacá</title>
     <script>
       (function () {
-        var map = {
-          'historia.html': '#/historia',
-          'nuestra-gente.html': '#/historia#gente',
-          'ubicacion.html': '#/territorio#como-llegar',
-          'mapa.html': '#/territorio',
-          'que-hacer.html': '#/agenda',
-          'creditos.html': '#/creditos'
+        var legacy = {
+          'historia.html': 'historia',
+          'nuestra-gente.html': 'historia#gente',
+          'ubicacion.html': 'territorio#como-llegar',
+          'mapa.html': 'territorio',
+          'que-hacer.html': 'agenda',
+          'creditos.html': 'creditos'
         };
-        var file = window.location.pathname.split('/').pop() || '';
-        var target = map[file] || '#/';
-        var base = window.location.pathname.replace(/[^/]*$/, '');
-        window.location.replace(base + target);
+        var parts = window.location.pathname.split('/');
+        var file = parts.pop() || '';
+        var base = parts.join('/') + '/';
+        if (legacy[file]) {
+          window.location.replace(base + legacy[file]);
+          return;
+        }
+        window.location.replace(base);
       })();
     </script>
   </head>
   <body style="font-family: system-ui, sans-serif; background: #F5F1E8; color: #161917; padding: 2rem;">
-    <p>Redirigiendo a la nueva edición de Nobsa, Boyacá… <a href="./">Ir al inicio</a>.</p>
+    <p>Redirigiendo a Nobsa, Boyacá… <a href="./">Ir al inicio</a>.</p>
   </body>
 </html>

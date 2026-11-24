@@ -1,10 +1,18 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Compatible con GitHub Pages tanto en repositorio de proyecto (/Nobsa/) como en dominio raíz (/).
+function normalizeBase(raw?: string): string {
+  if (!raw || raw === '/') return '/';
+  const withLead = raw.startsWith('/') ? raw : `/${raw}`;
+  return withLead.endsWith('/') ? withLead : `${withLead}/`;
+}
+
 export default defineConfig({
   plugins: [react()],
-  base: process.env.VITE_BASE_PATH || './',
+  base: normalizeBase(process.env.VITE_BASE_PATH),
+  optimizeDeps: {
+    entries: ['index.html'],
+  },
   build: {
     outDir: 'dist',
     sourcemap: false,

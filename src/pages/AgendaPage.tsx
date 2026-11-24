@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowUpRight, Calendar, Clock, MapPin } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowUpRight, Bookmark, BookmarkCheck, Calendar, Clock, MapPin } from 'lucide-react';
 import { FESTIVAL_CATEGORIES, FESTIVALS, SUGGESTED_JOURNEYS } from '../data/festivals';
 import type { FestivalCategory } from '../types/nobsa';
+import { useVisitPlanner } from '../context/VisitPlannerContext';
+import { useLanguage } from '../context/LanguageContext';
+import { FESTIVAL_EN } from '../i18n/translations';
 import { EditorialImage } from '../components/ui/EditorialImage';
 import { Reveal } from '../components/ui/Reveal';
 import { SectionHeader } from '../components/ui/SectionHeader';
@@ -10,8 +13,12 @@ import { SeoHead } from '../components/seo/SeoHead';
 
 export function AgendaPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const highlightedEvent = searchParams.get('evento');
   const [filter, setFilter] = useState<'todos' | FestivalCategory>('todos');
+
+  const { isFestivalSaved, toggleFestival, loadTemplate } = useVisitPlanner();
+  const { lang, t } = useLanguage();
 
   useEffect(() => {
     if (!highlightedEvent) return;
@@ -33,7 +40,7 @@ export function AgendaPage() {
         name: 'Calendario de Festividades y Recorridos en Nobsa, Boyacá',
         description:
           'Fechas clave para visitar Nobsa: Festival de la Vid y el Vino, Semana Mayor, Cruz de Aranda, Día Mundial de la Ruana, San Roque, Festival Vallenato y Navidad.',
-        url: 'https://afacevedom.github.io/Nobsa/#/agenda',
+        url: 'https://afacevedom.github.io/Nobsa/agenda/',
       },
       {
         '@type': 'ItemList',
@@ -62,7 +69,7 @@ export function AgendaPage() {
         '@type': 'BreadcrumbList',
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'Inicio', item: 'https://afacevedom.github.io/Nobsa/' },
-          { '@type': 'ListItem', position: 2, name: 'Agenda y Rutas', item: 'https://afacevedom.github.io/Nobsa/#/agenda' },
+          { '@type': 'ListItem', position: 2, name: 'Agenda y Rutas', item: 'https://afacevedom.github.io/Nobsa/agenda/' },
         ],
       },
     ],
@@ -81,15 +88,22 @@ export function AgendaPage() {
         jsonLd={agendaJsonLd}
       />
 
-      {/* Cabecera */}
       <section className="border-b border-tinta/10 bg-paper-grid py-12 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeader
             as="h1"
             index="05"
-            eyebrow="Calendario y experiencias"
-            title="Un año de festividades y recorridos en Nobsa"
-            lead="Cada mes del calendario nobsano convoca una celebración distinta: vino en enero, fe en Semana Mayor y mayo, lana a mitad de año, acordeón en noviembre y luces en diciembre."
+            eyebrow={lang === 'en' ? 'Calendar & experiences' : 'Calendario y experiencias'}
+            title={
+              lang === 'en'
+                ? 'A year of festivals and routes in Nobsa'
+                : 'Un año de festividades y recorridos en Nobsa'
+            }
+            lead={
+              lang === 'en'
+                ? 'Each season brings a distinct celebration: wine in January, pilgrimages in spring, wool ruanas mid-year, accordion in November, and lights in December.'
+                : 'Cada mes del calendario nobsano convoca una celebración distinta: vino en enero, fe en Semana Mayor y mayo, lana a mitad de año, acordeón en noviembre y luces en diciembre.'
+            }
           />
 
           <div className="mt-7 flex flex-wrap gap-2 sm:mt-8" role="group" aria-label="Filtrar festividades">
@@ -124,11 +138,15 @@ export function AgendaPage() {
         </div>
       </section>
 
-      {/* Lista editorial de festividades */}
       <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-14 lg:px-8">
         <div className="space-y-6">
           {visibleFestivals.map((fest) => {
             const isHighlighted = fest.id === highlightedEvent;
+            const saved = isFestivalSaved(fest.id);
+            const title = lang === 'en' && FESTIVAL_EN[fest.id] ? FESTIVAL_EN[fest.id].title : fest.title;
+            const month =
+              lang === 'en' && FESTIVAL_EN[fest.id] ? FESTIVAL_EN[fest.id].monthLabel : fest.monthLabel;
+
             return (
               <Reveal key={fest.id}>
                 <article
@@ -141,22 +159,50 @@ export function AgendaPage() {
                     <EditorialImage
                       filename={fest.image}
                       alt={fest.imageAlt}
+                      caption={title}
+                      zoomable
                       className="aspect-[16/10] w-full object-cover lg:aspect-auto lg:h-full lg:min-h-[240px]"
                     />
                   </div>
                   <div className="flex flex-col justify-between p-6 sm:p-8 lg:col-span-8">
                     <div>
-                      <div className="flex flex-wrap items-center gap-3">
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-grana px-3 py-1 font-mono text-[11px] uppercase tracking-wider text-lana">
-                          <Calendar className="h-3 w-3" />
-                          <time>{fest.monthLabel}</time>
-                        </span>
-                        <span className="font-mono text-xs uppercase tracking-wider text-tinta-soft">
-                          {FESTIVAL_CATEGORIES[fest.category]}
-                        </span>
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-grana px-3 py-1 font-mono text-[11px] uppercase tracking-wider text-lana">
+                            <Calendar className="h-3 w-3" />
+                            <time>{month}</time>
+                          </span>
+                          <span className="font-mono text-xs uppercase tracking-wider text-tinta-soft">
+                            {FESTIVAL_CATEGORIES[fest.category]}
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => toggleFestival(fest.id)}
+                          aria-pressed={saved}
+                          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                            saved
+                              ? 'bg-musgo text-lana'
+                              : 'border border-tinta/15 bg-lana text-tinta hover:border-grana hover:text-grana'
+                          }`}
+                        >
+                          {saved ? (
+                            <>
+                              <BookmarkCheck className="h-3.5 w-3.5" />
+                              {t.savedPlace}
+                            </>
+                          ) : (
+                            <>
+                              <Bookmark className="h-3.5 w-3.5" />
+                              {t.savePlace}
+                            </>
+                          )}
+                        </button>
                       </div>
+
                       <h2 className="mt-3 font-display text-2xl font-semibold text-tinta sm:text-3xl">
-                        {fest.title}
+                        {title}
                       </h2>
                       <p className="mt-3 text-sm leading-relaxed text-tinta-muted sm:text-base">
                         {fest.fullText}
@@ -183,14 +229,13 @@ export function AgendaPage() {
         </div>
       </section>
 
-      {/* RECORRIDOS SUGERIDOS */}
       <section id="recorridos" className="border-t border-tinta/10 bg-tinta py-14 text-lana bg-loom-grid sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeader
             index="06"
             eyebrow="Itinerarios prácticos"
             title="Tres maneras de recorrer Nobsa"
-            lead="Rutas sugeridas a partir de los lugares verificados del municipio, pensadas según el tiempo y el ritmo de tu visita."
+            lead="Rutas sugeridas a partir de los lugares verificados del municipio; puedes cargar cualquiera directo en «Mi Visita» para abrirla en Google Maps/Waze o descargarla en .GPX."
             dark
           />
 
@@ -231,6 +276,18 @@ export function AgendaPage() {
                     </li>
                   ))}
                 </ol>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    loadTemplate(journey.stops.map((s) => s.placeId));
+                    navigate('/mi-visita');
+                  }}
+                  className="mt-6 inline-flex min-h-[40px] items-center justify-center gap-2 rounded-full bg-lana px-4 py-2 text-xs font-semibold text-tinta transition hover:bg-trigo-soft"
+                >
+                  <Bookmark className="h-3.5 w-3.5" />
+                  Cargar en Mi Visita y descargar GPX
+                </button>
               </article>
             ))}
           </div>

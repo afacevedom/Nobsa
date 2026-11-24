@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
 import { HISTORICAL_CHAPTERS, TIMELINE_EVENTS } from '../data/history';
 import { DEMOGRAPHIC_KPI, DEMOGRAPHIC_NOTES } from '../data/demographics';
+import { useLanguage } from '../context/LanguageContext';
 import { EditorialImage } from '../components/ui/EditorialImage';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { DemographicsCharts } from '../components/ui/DemographicsCharts';
+import { AudioNarrator } from '../components/interactive/AudioNarrator';
 import { Reveal } from '../components/ui/Reveal';
 import { SeoHead } from '../components/seo/SeoHead';
 
@@ -15,7 +17,8 @@ const ACCENT_STYLES = {
 };
 
 export function HistoryPeoplePage() {
-  const [activeYearIdx, setActiveYearIdx] = useState(1); // 1593 por defecto
+  const [activeYearIdx, setActiveYearIdx] = useState(1);
+  const { lang } = useLanguage();
   const activeMilestone = TIMELINE_EVENTS[activeYearIdx];
 
   const historyJsonLd = useMemo(
@@ -61,17 +64,23 @@ export function HistoryPeoplePage() {
         '@type': 'BreadcrumbList',
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'Inicio', item: 'https://afacevedom.github.io/Nobsa/' },
-          { '@type': 'ListItem', position: 2, name: 'Historia y Gente', item: 'https://afacevedom.github.io/Nobsa/#/historia' },
+          { '@type': 'ListItem', position: 2, name: 'Historia y Gente', item: 'https://afacevedom.github.io/Nobsa/historia/' },
         ],
       },
     ],
     []
   );
 
+  const fullHistoryAudio = useMemo(
+    () =>
+      HISTORICAL_CHAPTERS.map((c) => `${c.title}. ${c.paragraphs.join(' ')}`).join(' '),
+    []
+  );
+
   return (
     <div>
       <SeoHead
-        title="Historia de Nobsa (1593) y Demografía | Nobsa, Boyacá"
+        title="Historia de Nobsa (1593) y Demografía DANE | Nobsa, Boyacá"
         description="Historia verificada de Nobsa, Boyacá: resistencia del cacique Tundama (1539), fundación el 9 de enero de 1593, Acerías Paz del Río y retrato demográfico DANE (16.446 habitantes)."
         path="/historia"
         type="article"
@@ -81,24 +90,35 @@ export function HistoryPeoplePage() {
         jsonLd={historyJsonLd}
       />
 
-      {/* Cabecera histórica */}
       <section className="border-b border-tinta/10 bg-paper-grid py-12 sm:py-20">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-12 lg:items-end lg:gap-10 lg:px-8">
           <div className="lg:col-span-7">
             <SectionHeader
               as="h1"
               index="04"
-              eyebrow="Memoria y demografía"
-              title="Historia de Nobsa y retrato de su gente"
+              eyebrow={lang === 'en' ? 'Memory & demographics' : 'Memoria y demografía'}
+              title={
+                lang === 'en'
+                  ? 'History of Nobsa and portrait of its people'
+                  : 'Historia de Nobsa y retrato de su gente'
+              }
               lead="Desde la resistencia del cacique Tundama en 1539 y la fundación del 9 de enero de 1593 hasta la convivencia entre las 11 veredas rurales, Belencito y el corredor industrial."
             />
+            <div className="mt-5">
+              <AudioNarrator
+                text={fullHistoryAudio}
+                label={lang === 'en' ? 'Listen to historical chronicle (ES)' : 'Escuchar crónica histórica'}
+              />
+            </div>
           </div>
           <div className="lg:col-span-5">
             <div className="overflow-hidden rounded-3xl border border-tinta/15 shadow-editorial">
               <EditorialImage
                 filename="desde-la-capilla-de-lourdes.jpg"
                 alt="Panorámica histórica del casco urbano de Nobsa desde la Capilla de Lourdes"
+                caption="Vista panorámica del casco urbano de Nobsa desde El Calvario."
                 priority
+                zoomable
                 className="aspect-[16/10] w-full object-cover"
               />
             </div>
@@ -106,7 +126,6 @@ export function HistoryPeoplePage() {
         </div>
       </section>
 
-      {/* LÍNEA DE TIEMPO INTERACTIVA */}
       <section className="bg-tinta py-14 text-lana bg-loom-grid sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-trigo-soft">
@@ -165,7 +184,6 @@ export function HistoryPeoplePage() {
         </div>
       </section>
 
-      {/* RELATO HISTÓRICO EN TRES CAPÍTULOS */}
       <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
         <div className="grid gap-10 lg:grid-cols-12">
           <div className="space-y-10 lg:col-span-8">
@@ -193,6 +211,7 @@ export function HistoryPeoplePage() {
               <EditorialImage
                 filename="Historia1.jpg"
                 alt="Fotografía histórica del municipio de Nobsa, Boyacá"
+                zoomable
                 className="aspect-[4/3] w-full object-cover"
               />
               <figcaption className="p-4 text-xs text-tinta-muted">
@@ -204,6 +223,7 @@ export function HistoryPeoplePage() {
               <EditorialImage
                 filename="parque-principal-de-nobsa-boyacá.jpg"
                 alt="Parque principal de Nobsa en la provincia del Sugamuxi"
+                zoomable
                 className="aspect-[4/3] w-full object-cover"
               />
               <figcaption className="p-4 text-xs text-tinta-muted">
@@ -214,7 +234,6 @@ export function HistoryPeoplePage() {
         </div>
       </section>
 
-      {/* NUESTRA GENTE — DIAGNÓSTICO DEMOGRÁFICO */}
       <section id="gente" className="border-t border-tinta/10 bg-lana-deep/55 py-14 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeader
